@@ -20,7 +20,7 @@ public:
     virtual void update(double *upd_vec) = 0;
 
     // proximity in response between model and measurements
-    virtual void residual(double *mes, double *resp) = 0;
+    virtual double residual(double *mes, double *resp) = 0;
 
     virtual void set_param(int ind, double val) = 0;
     virtual double get_param(int ind) = 0;
