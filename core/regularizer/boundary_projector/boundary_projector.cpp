@@ -1,6 +1,7 @@
+#include <cmath>
 #include "boundary_projector.h"
 
-void boundary_projector::prune()
+void Boundary_Projector::prune()
 {
     int i;
     double param;
@@ -10,8 +11,8 @@ void boundary_projector::prune()
         param = m->get_param(i);
 
         if(std::isnan(param)) param = 0;
-        if(param > upper_boundary[i]) param = upper_boundary[i];
-        if(param < lower_boundary[i]) param = lower_boundary[i];
+        if(param > upper_bound[i]) param = upper_bound[i];
+        if(param < lower_bound[i]) param = lower_bound[i];
 
         m->set_param(i, param);
     }

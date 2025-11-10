@@ -1,11 +1,13 @@
+#include <cmath>
+
 #include "kalman_unscented.h"
-#include "../../utilities/mathematics/matrix.h"
+#include "../../../utilities/mathematics/matrix.h"
 
 // sigma point computation
-void kalman_unscented::compute_sigma()
+void Kalman_Unscented::compute_sigma()
 {
     int i, j;
-    double sq_n = std::sqrt(m->num_pars);
+    double sq_n = sqrt(m->num_pars);
     double model_state[m->num_pars];
 
     // compute sigma points with rows of covariance matrix
@@ -13,7 +15,7 @@ void kalman_unscented::compute_sigma()
     {
         for(j=0; j<m->num_pars; j++)
         {
-            x_sigma[i*m->num_pars + j] = m->get_param[j] + sq_n*S[i*m->num_pars + j];
+            x_sigma[i*m->num_pars + j] = m->get_param(j) + sq_n*S[i*m->num_pars + j];
             x_sigma[(i+m->num_pars)*m->num_pars + j] = m->get_param(j) - sq_n*S[i*m->num_pars + j];
         }
     }
@@ -39,12 +41,12 @@ void kalman_unscented::compute_sigma()
 }
 
 // necessary matrix computations
-void kalman_unscented::get_matrices()
+void Kalman_Unscented::get_matrices()
 {
     int i, j, k;
    
     // compute average response
-    memset(y_avg, 0, m->forward_size*sizeof(double));
+    std::fill(y_avg.begin(), y_avg.end(), 0);
     for(i=0; i<2*m->num_pars; i++)
         for(j=0; j<m->forward_size; j++)
             y_avg[j] = y_avg[j] + y_sigma[i*m->forward_size + j]/(2*m->num_pars);
@@ -66,7 +68,7 @@ void kalman_unscented::get_matrices()
             P_xy[i*m->forward_size + j] = 0;
             for(k=0; k<2*m->num_pars; k++)
                 P_xy[i*m->forward_size + j] = P_xy[i*m->forward_size + j] + 
-                (x_sigma[k*m->num_pars + i] - m->params[i])*(y_sigma[k*m->forward_size + j] - y_avg[j])/(2*m->num_pars);
+                (x_sigma[k*m->num_pars + i] - m->get_param(i))*(y_sigma[k*m->forward_size + j] - y_avg[j])/(2*m->num_pars);
         }
    
     // Kalman gain
@@ -85,7 +87,7 @@ void kalman_unscented::get_matrices()
         }
 }
 
-void get_update(double *mes, double *upd_vec, double *upd_cov)
+void Kalman_Unscented::get_update(double *mes, double *upd_vec, double *upd_cov)
 {
     int i, j, k;
    
@@ -98,8 +100,8 @@ void get_update(double *mes, double *upd_vec, double *upd_cov)
             upd_vec[i] = upd_vec[i] + K[i*m->forward_size + j]*(mes[j] - y_avg[j]);
          
     // covariance update
-    memset(S_aux_1, 0, m->num_pars*m->num_pars*sizeof(double));
-   
+    std::fill(S_aux_1.begin(), S_aux_1.end(), 0);
+
     // K P_y
     for(i=0; i<m->num_pars; i++)
         for(j=0; j<m->forward_size; j++)

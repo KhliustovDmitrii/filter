@@ -3,12 +3,19 @@
 
 #include "../model/model.h"
 
-class regularizer
+// prunes model parameters unconditionally
+class Regularizer
 {
+
+protected:
+    Model *m;
+
 public:
-    model *m;
 
     virtual void prune() = 0;
-}
+
+    Regularizer(Model *model) : m(model){};
+    virtual ~Regularizer() = default;
+};
 
 #endif

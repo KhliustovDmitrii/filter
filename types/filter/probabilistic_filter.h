@@ -1,21 +1,31 @@
 #ifndef _PROBABILISTIC_FILTER_H_
 #define _PROBABILISTIC_FILTER_H_
 
+#include <vector>
 #include "../model/model.h"
 
-class probabilistic_filter
+// computes "optimal" parameters update based on measurements
+class Probabilistic_Filter
 {
-public:
+
+protected:
     // forward function computing
-    model *m;
+    Model *m;
 
     // noise in measurements
-    double R[m->forward_size*m->forward_size];
+    std::vector<double> R;
 
     // noise in parameters
-    double S[m->num_pars*m->num_pars];
+    std::vector<double> S;
+
+public:
 
     // get updates for parameter vector and covariance matrix
     virtual void get_update(double *mes, double *upd_vec, double *upd_cov) = 0;
-}
+
+    Probabilistic_Filter(Model *model) 
+    : m(model), R(m->forward_size*m->forward_size, 0), S(m->num_pars*m->num_pars, 0) {};
+
+    virtual ~Probabilistic_Filter() = default;
+};
 #endif

@@ -1,22 +1,22 @@
 #include "kalman_extended.h"
 
-void kalman_extended::get_update(double *mes, double *upd_vec, double *upd_cov)
+void Kalman_Extended::get_update(double *mes, double *upd_vec, double *upd_cov) 
 {
     int i;
     double resp[m->forward_size];
    
-    kalman_extended::get_jacobian();
+    Kalman_Extended::get_jacobian();
     m->response(resp);
    
-    std::memset(upd_vec, 0, sizeof(double)*m->num_parss);
-    std::memcpy(upd_cov, S, sizeof(double)*m->num_par*m->num_pars)
+    std::memset(upd_vec, 0, sizeof(double)*m->num_pars);
+    std::memcpy(upd_cov, 0, sizeof(double)*m->num_pars*m->num_pars);
 
     // process each observation and update parameters accordingly
     for(i=0; i<m->forward_size; i++)
-        kalman_extended::proc(i, upd_vec, upd_cov, resp[i] - mes[i]);
+        Kalman_Extended::proc(i, upd_vec, upd_cov, resp[i] - mes[i]);
 }
 
-void kalman_extended::get_jacobian()
+void Kalman_Extended::get_jacobian()
 {
     int i, j;
     double h = 0.001;
@@ -41,7 +41,7 @@ void kalman_extended::get_jacobian()
     }
 }
 
-void kalman_extended::proc(int i, double *upd_vec, double *upd_cov, double delta)
+void Kalman_Extended::proc(int i, double *upd_vec, double *upd_cov, double delta)
 {
     int i,j,k;
     double d[2], bk,ck,dz, tmp;

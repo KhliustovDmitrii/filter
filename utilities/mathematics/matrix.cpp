@@ -1,6 +1,7 @@
+#include <cmath>
 #include "matrix.h"
 
-void kalman_unscented::invert_matrix(double *dest, double *source, int dim)
+void invert_matrix(std::vector<double> &dest, std::vector<double> &source, int dim)
 {
    int i, j, k;
    double tmp;
@@ -56,7 +57,7 @@ void kalman_unscented::invert_matrix(double *dest, double *source, int dim)
    
 }
 
-void kalman_unscented::matrix_square_root(double *dest, double *source, int dim)
+void matrix_square_root(std::vector<double> &dest, std::vector<double> &source, int dim)
 {
    int i, j, k;
    
@@ -65,7 +66,7 @@ void kalman_unscented::matrix_square_root(double *dest, double *source, int dim)
       dest[i*dim + i] = source[i*dim + i];
       for(j=0; j<i; j++)
          dest[i*dim + i] = dest[i*dim + i] - dest[i*dim + j]*dest[i*dim + j];
-      dest[i*dim + i] = std::sqrt(dest[i*dim + i]);
+      dest[i*dim + i] = sqrt(dest[i*dim + i]);
       
       for(j=0; j<i; j++)
          dest[j*dim + i] = 0;
