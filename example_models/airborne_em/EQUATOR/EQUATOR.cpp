@@ -1,11 +1,17 @@
-#include "EQUATOR.h"
+#include <cstring>
+#include <iostream>
+#include <fstream>
 
-void aem_model_raw::forward()
+#include "EQUATOR.h"
+#include "../../utilities/mathematics/spline/spline.h"
+#include "../../utilities/mathematics/special_functions/special_functions.h"
+
+void EQUATOR::forward()
 {
     int i;
 
     // --------------------  frequency domain response
-    fd_forward(resp_fd);
+    fd_forward(resp_fd, freqs);
 
     for(i=0; i<num_freqs; i++)
     {
@@ -18,14 +24,14 @@ void aem_model_raw::forward()
         td_forward(td_chan);
 }
 
-void aem_model_raw::td_forward(double *dest)
+void EQUATOR::td_forward(std::vector<double> &dest)
 {
     using namespace std::complex_literals;
     spline sr, si;
     int i, j;
    
     // fulltime frequency response
-    fd_forward(resp_fd_fulltime, freqs_fd_fulltime, num_freqs_fulltime);
+    fd_forward(resp_fd_fulltime, freqs_fd_fulltime);
    
     // clear high frequencies
     std::complex<double> y0 =  imag(resp_fd_fulltime[num_freqs_fulltime-1]) + 1i*real(resp_fd_fulltime[num_freqs_fulltime-1]);
@@ -69,23 +75,23 @@ void aem_model_raw::td_forward(double *dest)
 }
 
 // calculate forward response
-void aem_model_raw::fd_forward(std::complex<double> *dest)
+void EQUATOR::fd_forward(std::vector<std::complex<double>> &dest, std::vector<double> &frs)
 {
     using namespace std::complex_literals;
     int i, j;
     double rho_inf, m, tau, c;
     std::complex<double> alp;
-    for(i=0; i<num_freqs; i++)
+    for(i=0; i<frs.size(); i++)
     {
         for(j=0; j<num_layers; j++) rhos_fd[j] = rhos[j];
 
         // calculate f dependent resistivities
         for(j=0; j<num_pol_layers; j++)
         {
-            rho_inf = cole[3*j];
+            rho_inf = cole_rho[j];
             m = 1 - rho_inf/rhos[pol_inds[j]];
-            tau = cole[3*j + 1];
-            c = cole[3*j + 2];
+            tau = cole_tau[j];
+            c = cole_c[j];
             alp = pow(freqs[i]*tau*2*M_PI, c);
             alp = 1. + alp * std::exp(c*1i*M_PI/2.);
             rhos_fd[pol_inds[j]] = rhos_fd[pol_inds[j]]*(1. - m*(1. - 1./alp));
@@ -95,12 +101,12 @@ void aem_model_raw::fd_forward(std::complex<double> *dest)
     }
 }
 
-std::complex<double> aem_model_raw::ImHz(double r,double z,double f)
+std::complex<double> EQUATOR::ImHz(double r,double z,double f)
 {
     return integral(z,r,f);
 }
 
-std::complex<double> aem_model_raw::integral(double hh, double r, double f)
+std::complex<double> EQUATOR::integral(double hh, double r, double f)
 {
     using namespace std::complex_literals;
     std::complex<double> PS;     
@@ -137,7 +143,7 @@ std::complex<double> aem_model_raw::integral(double hh, double r, double f)
     return intl;
 }
 
-std::complex<double> aem_model_raw::Impedance(double n0, double om)
+std::complex<double> EQUATOR::Impedance(double n0, double om)
 {
     using namespace std::complex_literals;
     int i, m;
@@ -162,7 +168,7 @@ std::complex<double> aem_model_raw::Impedance(double n0, double om)
     return Imp;
 }
 
-std::complex<double> aem_model_raw::PartSum(double n0, double hh, double r, std::complex<double> n1, std::complex<double> Imp)
+std::complex<double> EQUATOR::PartSum(double n0, double hh, double r, std::complex<double> n1, std::complex<double> Imp)
 {
     std::complex<double> s;
     
@@ -176,7 +182,7 @@ std::complex<double> aem_model_raw::PartSum(double n0, double hh, double r, std:
     return s;
 }
 
-void aem_model_raw::print_model()
+void EQUATOR::print_model()
 {
     int i;
 
@@ -192,13 +198,21 @@ void aem_model_raw::print_model()
     for(i=0; i<num_layers-1; i++)
         std::cout << depths[i] << " ";
 
-    std::cout << "\nCOLE\n";
-    for(i=0; i<num_pol_layers*3; i++)
-        std::cout << cole[i] << " ";
+    std::cout << "\nCOLE RHO\n";
+    for(i=0; i<num_pol_layers; i++)
+        std::cout << cole_rho[i] << " ";
+
+    std::cout << "\nCOLE TAU\n";
+    for(i=0; i<num_pol_layers; i++)
+        std::cout << cole_tau[i] << " ";
+
+    std::cout << "\nCOLE C\n";
+    for(i=0; i<num_pol_layers; i++)
+        std::cout << cole_c[i] << " ";
     std::cout << "\n-----------------------------------------------------------------------------------------\n";
 }
 
-void aem_model_raw::print_to_file(std::ofstream &out)
+void EQUATOR::print_to_file(std::ofstream &out)
 {
     int i;
     double depp;
