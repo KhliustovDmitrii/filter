@@ -23,9 +23,6 @@ public:
     // forward function
     virtual void response(double *resp_arr) = 0;
 
-    // update model parameters
-    virtual void update(double *upd_vec) = 0;
-
     // proximity in response between model and measurements
     virtual double residual(double *mes, double *resp) = 0;
 
@@ -33,7 +30,7 @@ public:
     virtual void set_param(int ind, double val) = 0;
     virtual double get_param(int ind) = 0;
 
-    Model(int num_params, int response_size) 
+    Model(int num_params = 0, int response_size = 0) 
         : num_pars(num_params), forward_size(response_size), params_(num_params, 0.0) {};
 
     virtual ~Model() = default;

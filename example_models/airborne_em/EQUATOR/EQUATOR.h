@@ -27,7 +27,7 @@ public:
     // differentiable
     std::vector<double> depths, rhos;
     std::vector<double> cole_rho, cole_tau, cole_c;
-    double altitude_correction;
+    std::vector<double> altitude_correction;
     
     // fixed
     std::vector<double> freqs, chans;
@@ -61,7 +61,8 @@ public:
             cole_rho(std::vector<double>(rho, pi.size())),
             cole_tau(std::vector<double>(0.001, pi.size())),
             cole_c(std::vector<double>(0.5, pi.size())),
-            altitude_correction(0), freqs(fr), chans(ch),
+            altitude_correction(std::vector<double>(0, 1)), 
+            freqs(fr), chans(ch),
             freq_re(std::vector<double>(0, fr.size())),
             freq_im(std::vector<double>(0, fr.size())),
             td_chan(std::vector<double>(0, ch.size()-1)),

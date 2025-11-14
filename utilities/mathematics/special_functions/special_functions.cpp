@@ -72,3 +72,33 @@ double primField(double hd,
     Ampl = sqrt(Hp[1] * Hp[1] + Hp[2] * Hp[2] + Hp[3] * Hp[3]);
     return Ampl;
 }
+
+double transform_function_dispatch(double x, int t)
+{
+   switch(t)
+   {
+      case 0:
+         return x;
+      case 1:
+         return log(x);
+      case 2:
+         return log_lin(x); 
+   }
+   
+   return x;
+}
+
+double inverse_transform_function_dispatch(double x, int t)
+{
+   switch(t)
+   {
+      case 0:
+         return x;
+      case 1:
+         return exp(x);
+      case 2:
+         return exp_lin(x); 
+   }
+
+   return x;
+}

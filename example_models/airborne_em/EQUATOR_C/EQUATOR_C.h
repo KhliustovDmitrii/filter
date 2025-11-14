@@ -6,36 +6,68 @@
 #include "../EQUATOR/EQUATOR.h"
 #include "../../../types/model/model.h"
 
-class EQUATOR_C : public model
+class EQUATOR_C : public Model
 {
+
 public:
+    EQUATOR_C(EQUATOR *EQ,
+              std::vector<int> dd, std::vector<int> dr, std::vector<int> dac,
+              std::vector<int> dcr, std::vector<int> dct, std::vector<int> dcc,
+              std::vector<int> sd, std::vector<int> sr, std::vector<int> sac,
+              std::vector<int> scr, std::vector<int> sct, std::vector<int> scc,
+              std::vector<double> w) :
+              Model(),
+              E(EQ), diff_depth(dd), diff_rho(dr), diff_alt_cor(dac),
+              diff_cole_rho(dcr), diff_cole_tau(dct), diff_cole_c(dcc),
+              scale_depth(sd), scale_rho(sr), scale_alt_cor(sac),
+              scale_cole_rho(scr), scale_cole_tau(sct), scale_cole_c(scc)
+              {
 
-    EQUATOR *E;
+                // components of the interface
+                num_pars = diff_depth.size() + diff_rho.size() + diff_alt_cor.size() +
+                diff_cole_rho.size() + diff_cole_tau.size() + diff_cole_c.size();
 
-    int num_diff_depth;
-    int num_diff_rho;
-    int num_diff_cole;
+                forward_size = 2 * E->num_freqs + E->num_channels;
 
-    // differentiability - indexes of variable parameters
-    int diff_depth[num_diff_depth];
-    int diff_rho[num_diff_rho];
-    int diff_cole[num_diff_cole];
-    int diff_alt_cor;
+                params_.resize(num_pars, 0.0);
 
-    // scales; 0 for lin, 1 for log, 2 for log-lin
-    int scale_depth[num_diff_depth];
-    int scale_rho[num_diff_rho];
-    int scale_cole[num_diff_cole];
-    int scale_alt_cor;
-    int scale_total[num_diff_depth + num_diff_rho + num_diff_cole + diff_alt_cor];
+                // set up params equal to full EQUATOR's
+                full_to_c();
+              };
+
+    // forward function
+    virtual void response(double *resp_arr) override;
+
+    // proximity in response between model and measurements
+    virtual double residual(double *mes, double *resp) override;
+
+    // getters and setters
+    virtual void set_param(int ind, double val) override;
+    virtual double get_param(int ind) override;
 
 private:
 
-    // weights to compute residual with
-    double weights[forward_size];
+    EQUATOR *E;
 
-    // transforms underlying EQUATOR to _C representation
-    void compress();
-}
+    // differentiability of EQUATOR model parameters
+    std::vector<int> diff_depth, diff_rho;
+    std::vector<int> diff_cole_rho, diff_cole_tau, diff_cole_c;
+
+    // ugly, but we use vector here for uniformity
+    // empty corresponds to non-differentiable parameter
+    std::vector<int> diff_alt_cor;
+
+    // scales; 0 for lin, 1 for log, 2 for log-lin
+    std::vector<int> scale_depth, scale_rho;
+    std::vector<int> scale_cole_rho, scale_cole_tau, scale_cole_c;
+    std::vector<int> scale_alt_cor;
+
+    // weights to compute residual with
+    std::vector<double> weights;
+
+    // transforms underlying EQUATOR to _C  and vice versa
+    void c_to_full();
+    void full_to_c();
+};
 
 #endif
