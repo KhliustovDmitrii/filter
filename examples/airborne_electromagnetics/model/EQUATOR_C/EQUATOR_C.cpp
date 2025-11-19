@@ -186,7 +186,6 @@ void EQUATOR_C::full_to_c()
     }
 }
 
-
 double EQUATOR_C::residual(double *mes, double *resp)
 {
     double res;

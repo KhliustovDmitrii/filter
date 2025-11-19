@@ -14,6 +14,11 @@ public:
     // -1 - error during parsing
     virtual int read(std::vector<double> &dest, std::string &label) override;
 
+    Simple_Parser(std::string fname, char s, char d, int ls, 
+                  std::vector<std::string> dr) :
+    Reader(fname),
+    separator(s), decimal(d), label_size(ls), drop(dr) {};
+
 private:
 
     std::string line;

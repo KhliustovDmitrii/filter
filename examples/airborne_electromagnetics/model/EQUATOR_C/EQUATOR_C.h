@@ -6,10 +6,15 @@
 #include "../EQUATOR/EQUATOR.h"
 #include "../../../types/model/model.h"
 
+class EQUATOR_data_loader;
+
 class EQUATOR_C : public Model
 {
 
 public:
+
+    friend class EQUATOR_data_loader;
+
     EQUATOR_C(EQUATOR *EQ,
               std::vector<int> dd, std::vector<int> dr, std::vector<int> dac,
               std::vector<int> dcr, std::vector<int> dct, std::vector<int> dcc,

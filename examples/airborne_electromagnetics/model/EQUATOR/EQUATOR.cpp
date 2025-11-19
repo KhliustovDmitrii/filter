@@ -97,7 +97,7 @@ void EQUATOR::fd_forward(std::vector<std::complex<double>> &dest, std::vector<do
             rhos_fd[pol_inds[j]] = rhos_fd[pol_inds[j]]*(1. - m*(1. - 1./alp));
         }
 
-        dest[i] = ImHz(hor_dist, 2*(alt + altitude_correction) + ver_dist, freqs[i])/prim_field;
+        dest[i] = ImHz(hor_dist, 2*(alt + altitude_correction[0]) + ver_dist, freqs[i])/prim_field;
     }
 }
 
@@ -192,7 +192,7 @@ void EQUATOR::print_model()
         std::cout << rhos[i] << " ";
 
     std::cout << "\nAC\n";
-    std::cout << altitude_correction;
+    std::cout << altitude_correction[0];
 
     std::cout << "\nDEPTH\n";
     for(i=0; i<num_layers-1; i++)
@@ -221,7 +221,7 @@ void EQUATOR::print_to_file(std::ofstream &out)
     for(i=0; i<num_layers; i++)
         out << rhos[i] << " ";
 
-    out << altitude_correction << " ";
+    out << altitude_correction[0] << " ";
 
     depp = 0;
     for(i=0; i<num_layers-1; i++)
