@@ -6,7 +6,7 @@
 #include <vector>
 #include <complex>
 
-#include "../../utilities/mathematics/fourier/fft23.h"
+#include "utilities/mathematics/fourier/fft23.h"
 
 const double mu0 = M_PI*.4e-6;
 
@@ -52,33 +52,39 @@ public:
     // with lay_thick[i] = 1.1085 * lay_thick[i-1]
     EQUATOR(int nl, std::vector<int> pi, double rho, 
             std::vector<double> fr, std::vector<double> ch, double pf,
-            int nff = 100, int sl = 2592, int bc = 199, double bfr = 77.16,
-            std::vector<std::complex<double>> spec) :
+            std::vector<std::complex<double>> spec,
+            int nff = 100, int sl = 2592, int bc = 199, double bfr = 77.16) :
             num_layers(nl), num_pol_layers(pi.size()), pol_inds(pi), 
             num_freqs(fr.size()), num_channels(ch.size() - 1),
-            depths(std::vector<double>(0, nl-1)), 
-            rhos(std::vector<double>(rho, nl)),
-            cole_rho(std::vector<double>(rho, pi.size())),
-            cole_tau(std::vector<double>(0.001, pi.size())),
-            cole_c(std::vector<double>(0.5, pi.size())),
-            altitude_correction(std::vector<double>(0, 1)), 
+            depths(std::vector<double>(nl-1, 0)), 
+            rhos(std::vector<double>(nl, rho)),
+            cole_rho(std::vector<double>(pi.size(), rho)),
+            cole_tau(std::vector<double>(pi.size(), 0.001)),
+            cole_c(std::vector<double>(pi.size(), 0.5)),
+            altitude_correction(std::vector<double>(1, 0)), 
             freqs(fr), chans(ch),
-            freq_re(std::vector<double>(0, fr.size())),
-            freq_im(std::vector<double>(0, fr.size())),
-            td_chan(std::vector<double>(0, ch.size()-1)),
+            freq_re(std::vector<double>(fr.size(), 0)),
+            freq_im(std::vector<double>(fr.size(), 0)),
+            td_chan(std::vector<double>(ch.size()-1, 0)),
             hor_dist(0), ver_dist(0), alt(0), prim_field(pf),
             num_freqs_fulltime(nff), spec_len(sl), base_chan(bc),
-            freqs_fd_fulltime(std::vector<double>(0, nff)),
-            impulse_spec(spec)
+            freqs_fd_fulltime(std::vector<double>(nff, 0)),
+            impulse_spec(spec), 
+            rhos_fd(std::vector<std::complex<double>>(nl, 0)),
+            resp_fd(std::vector<std::complex<double>>(2*fr.size(), 0)),
+            resp_fd_fulltime(std::vector<std::complex<double>>(2*nff, 0))
     {
         int i;
         double thick_0 = 4;
 
-        for(i=0; i<num_layers; i++)
+        for(i=0; i<num_layers-1; i++)
         {
             depths[i] = thick_0;
             thick_0 = thick_0 * 1.1085;
         }
+
+        for(i=1;i<2*num_freqs_fulltime;i+=2)
+            freqs_fd_fulltime[(i-1)/2] = bfr*i;
     };
 
 

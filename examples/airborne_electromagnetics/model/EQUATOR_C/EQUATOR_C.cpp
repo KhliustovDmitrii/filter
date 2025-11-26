@@ -1,7 +1,7 @@
 #include "EQUATOR_C.h"
-#include "../../utilities/mathematics/special_functions/special_functions.h"
+#include "utilities/mathematics/special_functions/special_functions.h"
 
-void EQUATOR_C::response(double *resp_arr)
+void EQUATOR_C::response(std::vector<double> &resp_arr)
 {
     int i, pos;
 
@@ -54,17 +54,17 @@ void EQUATOR_C::set_param(int ind, double val)
     int b6 = b5 + diff_cole_c.size();
     int ind_c;
 
-    if(ind < b1) {dptr = &E->depths; sptr = &scale_rho; ind_c = ind - b1;}
+    if(ind < b1) {dptr = &E->rhos; sptr = &scale_rho; ind_c = ind;}
     else 
-    if(ind < b2) {dptr = &E->altitude_correction; sptr = &scale_alt_cor; ind_c = ind - b2;}
+    if(ind < b2) {dptr = &E->altitude_correction; sptr = &scale_alt_cor; ind_c = ind - b1;}
     else
-    if(ind < b3) {dptr = &E->rhos; sptr = &scale_depth; ind_c = ind - b3;}
+    if(ind < b3) {dptr = &E->depths; sptr = &scale_depth; ind_c = ind - b2;}
     else
-    if(ind < b4) {dptr = &E->cole_rho; sptr = &scale_cole_rho; ind_c = ind - b4;}
+    if(ind < b4) {dptr = &E->cole_rho; sptr = &scale_cole_rho; ind_c = ind - b3;}
     else
-    if(ind < b5) {dptr = &E->cole_tau; sptr = &scale_cole_tau; ind_c = ind - b5;}
+    if(ind < b5) {dptr = &E->cole_tau; sptr = &scale_cole_tau; ind_c = ind - b4;}
     else
-    if(ind < b6) {dptr = &E->cole_c; sptr = &scale_cole_c; ind_c = ind - b6;}
+    if(ind < b6) {dptr = &E->cole_c; sptr = &scale_cole_c; ind_c = ind - b5;}
     else return; // out of bounds
     
     params_[ind] = val;
@@ -186,7 +186,7 @@ void EQUATOR_C::full_to_c()
     }
 }
 
-double EQUATOR_C::residual(double *mes, double *resp)
+double EQUATOR_C::residual(std::vector<double> &mes, std::vector<double> &resp)
 {
     double res;
     int i;

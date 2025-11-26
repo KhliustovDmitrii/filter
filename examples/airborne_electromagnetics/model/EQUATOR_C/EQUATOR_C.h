@@ -4,7 +4,7 @@
 // compressed representation of EQUATOR
 // complies to model interface
 #include "../EQUATOR/EQUATOR.h"
-#include "../../../types/model/model.h"
+#include "types/model/model.h"
 
 class EQUATOR_data_loader;
 
@@ -25,7 +25,8 @@ public:
               E(EQ), diff_depth(dd), diff_rho(dr), diff_alt_cor(dac),
               diff_cole_rho(dcr), diff_cole_tau(dct), diff_cole_c(dcc),
               scale_depth(sd), scale_rho(sr), scale_alt_cor(sac),
-              scale_cole_rho(scr), scale_cole_tau(sct), scale_cole_c(scc)
+              scale_cole_rho(scr), scale_cole_tau(sct), scale_cole_c(scc),
+              weights(w)
               {
 
                 // components of the interface
@@ -41,10 +42,10 @@ public:
               };
 
     // forward function
-    virtual void response(double *resp_arr) override;
+    virtual void response(std::vector<double> &resp_arr) override;
 
     // proximity in response between model and measurements
-    virtual double residual(double *mes, double *resp) override;
+    virtual double residual(std::vector<double> &mes, std::vector<double> &resp) override;
 
     // getters and setters
     virtual void set_param(int ind, double val) override;

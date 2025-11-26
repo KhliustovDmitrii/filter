@@ -3,8 +3,8 @@
 #include <fstream>
 
 #include "EQUATOR.h"
-#include "../../utilities/mathematics/spline/spline.h"
-#include "../../utilities/mathematics/special_functions/special_functions.h"
+#include "utilities/mathematics/spline/spline.h"
+#include "utilities/mathematics/special_functions/special_functions.h"
 
 void EQUATOR::forward()
 {

@@ -1,7 +1,7 @@
 #ifndef _EQUATOR_DATA_LOADER_H_
 #define _EQUATOR_DATA_LOADER_H_
 
-#include "../../../types/data_loader/data_loader.h"
+#include "types/data_loader/data_loader.h"
 #include "../model/EQUATOR_C/EQUATOR_C.h"
 
 // data loader for equator model and data
