@@ -92,12 +92,12 @@ void EQUATOR::fd_forward(std::vector<std::complex<double>> &dest, std::vector<do
             m = 1 - rho_inf/rhos[pol_inds[j]];
             tau = cole_tau[j];
             c = cole_c[j];
-            alp = pow(freqs[i]*tau*2*M_PI, c);
+            alp = pow(frs[i]*tau*2*M_PI, c);
             alp = 1. + alp * std::exp(c*1i*M_PI/2.);
             rhos_fd[pol_inds[j]] = rhos_fd[pol_inds[j]]*(1. - m*(1. - 1./alp));
         }
 
-        dest[i] = ImHz(hor_dist, 2*(alt + altitude_correction[0]) + ver_dist, freqs[i])/prim_field;
+        dest[i] = ImHz(hor_dist, 2*(alt + altitude_correction[0]) + ver_dist, frs[i])/prim_field;
     }
 }
 

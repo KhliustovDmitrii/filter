@@ -9,155 +9,224 @@
 
 #include "utilities/parsing/simple_parser/simple_parser.h"
 #include "utilities/mathematics/special_functions/special_functions.h"
-
+#include <iostream>
 
 // Example of using the filter library for processing airborne electromagnetics data
 int main(int argc, char *argv[])
 {
-    // ------------ WAVEFORM
-    std::ifstream wf("waveform.XYZ");
-    double *waveform = new double[2592];
-    int i;
+  // ------------ WAVEFORM
+  std::ifstream wf("waveform.XYZ");
+  double *waveform = new double[2592];
+  int i;
    
-    for(i=0; i<2592; i++) wf >> waveform[i];
+  for(i=0; i<2592; i++) wf >> waveform[i];
 
-    FFT imp_fft;
-    memset(&imp_fft, 0, sizeof(imp_fft));
+  FFT imp_fft;
+  memset(&imp_fft, 0, sizeof(imp_fft));
+  
+  init_fft(&imp_fft,2592);
+  for(i=0;i<2592;i++)
+    imp_fft.xn[i] = waveform[i];
     
-    init_fft(&imp_fft,2592);
-    for(i=0;i<2592;i++)
-        imp_fft.xn[i] = waveform[i];
-        
-    fft_pro(&imp_fft,0);
+  fft_pro(&imp_fft,0);
 
-    // ------------ MODEL
-    int num_layers = 25;
-    int num_freqs = 15;
-    int num_channels = 14;
-    std::vector<int> pol_inds = {};
-    double rho_ini = 100;
+  // ------------ MODEL
 
-    std::vector<double> freqs = {77.1, 231.5, 385.8, 540.1, 694.4, 1003.1, 1157.41, 1311.7, 1466, 1620.4, 1774.7,
-                       1929, 2083.3, 2237.65, 2854.94, 3009.26, 3163.58, 3317.9, 3472.22, 6172.84, 13503.09};
+  // full
+  int num_layers = 25;
+  int num_freqs = 15;
+  int num_channels = 14;
+  std::vector<int> pol_inds = {};
+  double rho_ini = 100;
 
-    std::vector<double> chans = {1, 2, 3, 5, 7, 12, 19, 30, 49, 79, 128, 207, 336, 545, 884};
+  std::vector<double> freqs = {77.1, 231.5, 385.8, 540.1, 694.4, 1003.1, 1157.41, 1311.7, 1466, 1620.4, 1774.7,
+             1929, 2083.3, 2237.65, 2854.94, 3009.26, 3163.58, 3317.9, 3472.22, 6172.84, 13503.09};
 
-    double prim_field = primField(32, 25)/10000;
+  std::vector<double> chans = {1, 2, 3, 5, 7, 12, 19, 30, 49, 79, 128, 207, 336, 545, 884};
 
-    std::vector<std::complex<double>> spec;
-    for(i=0;i<2592;i++)
-        spec.push_back(imp_fft.fn[i]);
+  double prim_field = primField(32, 25)/10000;
 
-    EQUATOR full_model(num_layers, pol_inds, rho_ini, freqs, chans, prim_field, spec);
+  std::vector<std::complex<double>> spec;
+  for(i=0;i<2592;i++)
+    spec.push_back(imp_fft.fn[i]);
 
-    // ------------ ADAPTER
+  EQUATOR full_model(num_layers, pol_inds, rho_ini, freqs, chans, prim_field, spec);
 
-    std::vector<int> dr, dac, sr, sac;
-    std::vector<int> empty = {};
-    for(i=0; i<num_layers; i++)
-    {
-        dr.push_back(i);
-        sr.push_back(2);
-    }
-    dac.push_back(1);
-    sac.push_back(0);
+  // reduced
+  EQUATOR reduced_model(1, {}, 100, {77.1, 231.5}, {1}, prim_field, {1});
 
-    std::vector<double> noise_fd = {0.2, 0.12, 0.09, 0.13, 0.39, 0.5, 0.58, 0.52, 0.36, 0.46, 0.15, 0.31, 1.01, 0.56, 0.63,
-                       0.76, 0.44, 0.23, 0.44, 0.52, 1.11};
-    std::vector<double> noise_td = {71000, 71000, 70000, 66000, 53000, 33000, 33000, 23000, 19000, 30000, 18000, 16000, 10000, 7000};
+  // ------------ ADAPTER
+
+  // full
+  std::vector<int> dr, dac, sr, sac;
+  std::vector<int> empty = {};
+  for(i=0; i<num_layers; i++)
+  {
+    dr.push_back(i);
+    sr.push_back(2);
+  }
+  dac.push_back(1);
+  sac.push_back(0);
+
+  std::vector<double> noise_fd = {0.2, 0.12, 0.09, 0.13, 0.39, 0.5, 0.58, 0.52, 0.36, 0.46, 0.15, 0.31, 1.01, 0.56, 0.63,
+             0.76, 0.44, 0.23, 0.44, 0.52, 1.11};
+  std::vector<double> noise_td = {71000, 71000, 70000, 66000, 53000, 33000, 33000, 23000, 19000, 30000, 18000, 16000, 10000, 7000};
    
-    std::vector<double> weights = {};
+  std::vector<double> weights = {};
 
-    for(i=0; i<noise_fd.size(); i++) weights.push_back(noise_fd[i]);
-    for(i=0; i<noise_fd.size(); i++) weights.push_back(noise_fd[i]);
-    for(i=0; i<noise_td.size(); i++) weights.push_back(noise_td[i]);
+  for(i=0; i<noise_fd.size(); i++) weights.push_back(noise_fd[i]);
+  for(i=0; i<noise_fd.size(); i++) weights.push_back(noise_fd[i]);
+  for(i=0; i<noise_td.size(); i++) weights.push_back(noise_td[i]);
 
-    EQUATOR_C adapter(&full_model, empty, dr, dac, empty, empty, empty, empty, sr, sac, empty, empty, empty, weights);
+  EQUATOR_C adapter(&full_model, empty, dr, dac, empty, empty, empty, empty, sr, sac, empty, empty, empty, weights);
 
-    // ------------ READER
-    char sep = ' ';
-    char dec = '.';
-    int time_size = 15;
-    std::vector<std::string> drops;
-    drops.push_back("/");
-    drops.push_back("L");
+  // reduced
+  EQUATOR_C adapter_red(&reduced_model, {}, {0}, {}, {}, {}, {}, {}, {2}, {}, {}, {}, {}, {0.2, 1000, 0.2, 0.2});
 
-    Simple_Parser parser(std::string(argv[1]), sep, dec, time_size, drops);
+  // ------------ READER
+  char sep = ' ';
+  char dec = '.';
+  int time_size = 15;
+  std::vector<std::string> drops;
+  drops.push_back("/");
+  drops.push_back("L");
 
-    // ------------ INPUT FILTER
-    Averaging_Filter input_filter(4, 256);
+  Simple_Parser parser(std::string(argv[1]), sep, dec, time_size, drops);
 
-    // ------------ DATA LOADER
-    EQUATOR_data_loader data_loader(&adapter, 0, 1, 2, 3, 24, 45);
+  // ------------ INPUT FILTER
+  Averaging_Filter input_filter(4, 256);
 
-    // ------------ FILTER - EXTENDED
-    Kalman_Extended filter_ext(&adapter);
-    std::vector<double> R = filter_ext.get_R();
-    std::vector<double> S = filter_ext.get_S();
+  // ------------ DATA LOADER
 
-    double err_ini = 0.3;
-    double cor_ini = 0.1;
-    for(i=adapter.num_pars-1;i>=0;i--) 
+  // full
+  EQUATOR_data_loader data_loader(&adapter, 0, 1, 2, 3, 24, 45, -1, 1, 1);
+
+  // reduced
+  EQUATOR_data_loader data_loader_red(&adapter_red, 0, 1, 2, 3, 24, 45, -1, 1, 1);
+
+  // ------------ FILTER - EXTENDED
+
+  // full
+  Kalman_Extended filter_ext(&adapter);
+  std::vector<double> R = filter_ext.get_R();
+  std::vector<double> S = filter_ext.get_S();
+
+  double err_ini = 0.3;
+  double cor_ini = 0.1;
+  for(i=adapter.num_pars-1;i>=0;i--) 
+  {
+    if(i==adapter.num_pars-1)//Bottom layer resisitivity
+     S[i+adapter.num_pars*i] = err_ini;
+    else //Other resisitivities
     {
-      if(i==adapter.num_pars-1)//Bottom layer resisitivity
-         S[i+adapter.num_pars*i] = err_ini;
-      else //Other resisitivities
-      {
-         S[i+1+adapter.num_pars*i] = cor_ini*err_ini/S[i+1+adapter.num_pars*(i+1)];
-         S[i+adapter.num_pars*i] = sqrt(err_ini*err_ini-S[i+1+adapter.num_pars*i]*S[i+1+adapter.num_pars*i]);
-      }
+     S[i+1+adapter.num_pars*i] = cor_ini*err_ini/S[i+1+adapter.num_pars*(i+1)];
+     S[i+adapter.num_pars*i] = sqrt(err_ini*err_ini-S[i+1+adapter.num_pars*i]*S[i+1+adapter.num_pars*i]);
+    }
+  }
+
+  // real component
+  for(i=0; i<full_model.num_freqs-1; i++)
+    R[adapter.forward_size*i+i] = sqrt(noise_fd[i]*noise_fd[i] + noise_fd[i+1]*noise_fd[i+1]);
+
+  // higher freq excluded
+  R[adapter.forward_size*i + i] = 1000;
+  i++;
+
+  // imaginary component
+  int pos = i;
+  for(i=pos; i<full_model.num_freqs+pos; i++)
+    R[adapter.forward_size*i+i] = noise_fd[i-pos];
+
+  // td
+  pos = i;
+  for(i=pos; i<pos+full_model.num_channels; i++)
+    R[adapter.forward_size*i+i] = noise_td[i-pos];
+
+  filter_ext.set_R(R);
+  filter_ext.set_S(S);
+
+  // reduced
+  Kalman_Extended filter_ext_red(&adapter_red);
+  R = filter_ext_red.get_R();
+  S = filter_ext_red.get_S();
+
+  S[0] = 0.3;
+  R[0] = 0.2;
+  R[5] = 1000;
+  R[10] = 0.2;
+  R[15] = 1000;
+
+  filter_ext_red.set_R(R);
+  filter_ext_red.set_S(S);
+
+  // ------------ UPDATER
+  Decay_Updater updater(&adapter, 3, 0.5);
+  Decay_Updater updater_red(&adapter_red, 3, 0.5);
+
+  // ------------ REGULARIZER
+  // TODO
+
+  int ret_code;
+  std::vector<double> read_result(256, 0);
+  std::vector<double> avg_result(256, 0);
+  std::string time;
+  std::vector<double> measurements(256, 0);
+  std::vector<double> measurements_red(256, 0);
+  std::vector<double> upd_vec(adapter.num_pars, 0);
+  std::vector<double> upd_cov(adapter.num_pars*adapter.num_pars, 0);
+
+  std::vector<double> response(adapter.forward_size, 0);
+
+  double residual;
+  
+  while((ret_code = parser.read(read_result, time)) != -1)
+  {
+    // skip the line
+    if(ret_code == 1) continue;
+
+    ret_code = input_filter.add_data(read_result, avg_result);
+
+    // more data to add
+    if(ret_code != 0) continue;
+
+    for(i=0; i<10; i++)
+    {
+      data_loader_red.load(avg_result);
+      data_loader_red.get_measurements(measurements_red);
+
+      filter_ext_red.get_update(measurements_red, upd_vec, upd_cov);
+
+      updater_red.update(upd_vec, measurements_red);
+
+      reduced_model.print_model();
+
+      adapter_red.response(response);
+
+      residual = adapter_red.residual(measurements_red, response);
+      std::cout << "RESIDUAL    " << residual << std::endl;
+
+      if(residual < 1) break;
+
     }
 
-    for(i=0; i<full_model.num_freqs-1; i++)
-      R[adapter.forward_size*i+i] = sqrt(noise_fd[i]*noise_fd[i] + noise_fd[i+1]*noise_fd[i+1]);
-
-    R[adapter.forward_size*i + i] = 1000;
-    i++;
-
-    int pos = i;
-    for(i=pos; i<full_model.num_freqs+pos; i++)
-      R[adapter.forward_size*i+i] = noise_fd[i-pos];
-
-    pos = i;
-    for(i=pos; i<pos+full_model.num_channels; i++)
-      R[adapter.forward_size*i+i] = noise_td[i-pos];
-
-    filter_ext.set_R(R);
-    filter_ext.set_S(S);
-
-    // ------------ UPDATER
-    Decay_Updater updater(&adapter, 3, 0.5);
-
-    // ------------ REGULARIZER
-    // TODO
-
-    int ret_code;
-    std::vector<double> read_result(256, 0);
-    std::vector<double> avg_result(256, 0);
-    std::string time;
-    std::vector<double> measurements(256, 0);
-    std::vector<double> upd_vec(adapter.num_pars, 0);
-    std::vector<double> upd_cov(adapter.num_pars*adapter.num_pars, 0);
-    
-    while((ret_code = parser.read(read_result, time)) != -1)
+    for(i=0; i<15; i++)
     {
-        // skip the line
-        if(ret_code == 1) continue;
+      data_loader.load(avg_result);
 
-        ret_code = input_filter.add_data(read_result, avg_result);
+      data_loader.get_measurements(measurements);
 
-        // more data to add
-        if(ret_code != 0) continue;
+      filter_ext.get_update(measurements, upd_vec, upd_cov);
 
-        data_loader.load(avg_result);
+      updater.update(upd_vec, measurements);
 
-        data_loader.get_measurements(measurements);
+      full_model.print_model();
 
-        filter_ext.get_update(measurements, upd_vec, upd_cov);
+      adapter.response(response);
+      residual = adapter.residual(measurements, response);
+      std::cout << "RESIDUAL    " << residual << std::endl;
 
-        updater.update(upd_vec, measurements);
-
-        full_model.print_model();
+      if(residual < 1) break;
     }
-    return 0;
+  }
+  return 0;
 }
