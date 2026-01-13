@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
 
   std::vector<double> response(adapter.forward_size, 0);
 
-  double residual;
+  double residual, residual_min;
   
   while((ret_code = parser.read(read_result, time)) != -1)
   {
@@ -189,44 +189,50 @@ int main(int argc, char *argv[])
     // more data to add
     if(ret_code != 0) continue;
 
+    // fit reduced model
+    data_loader_red.load(avg_result);
+    data_loader_red.get_measurements(measurements_red);
+
+    adapter_red.response(response);
+    residual_min = adapter_red.residual(measurements_red, response);
+
     for(i=0; i<10; i++)
     {
-      data_loader_red.load(avg_result);
-      data_loader_red.get_measurements(measurements_red);
-
       filter_ext_red.get_update(measurements_red, upd_vec, upd_cov);
-
       updater_red.update(upd_vec, measurements_red);
 
-      reduced_model.print_model();
-
       adapter_red.response(response);
-
       residual = adapter_red.residual(measurements_red, response);
-      std::cout << "RESIDUAL    " << residual << std::endl;
+      std::cout << "------   " << residual << std::endl;
 
-      if(residual < 1) break;
+      if(residual < 1 || residual > residual_min) break;
 
+      residual_min = residual;
     }
+
+    reduced_model.print_model();
+
+    // fit full model
+    data_loader.load(avg_result);
+    data_loader.get_measurements(measurements);
+
+    adapter.response(response);
+    residual_min = adapter.residual(measurements, response);
 
     for(i=0; i<15; i++)
     {
-      data_loader.load(avg_result);
-
-      data_loader.get_measurements(measurements);
-
       filter_ext.get_update(measurements, upd_vec, upd_cov);
-
       updater.update(upd_vec, measurements);
-
-      full_model.print_model();
 
       adapter.response(response);
       residual = adapter.residual(measurements, response);
-      std::cout << "RESIDUAL    " << residual << std::endl;
+      std::cout << "++++++   " << residual << std::endl;
 
-      if(residual < 1) break;
+      if(residual < 1 || residual > residual_min) break;
     }
+
+    full_model.print_model();
   }
+
   return 0;
 }

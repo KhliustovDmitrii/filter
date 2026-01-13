@@ -1,6 +1,6 @@
 CC = g++
 INCLUDES = -I../..
-CFLAGS = -g
+CFLAGS = 
 
 define SRCI
 ../../types/filter/probabilistic_filter.cpp ../../types/data_loader/data_loader.cpp

@@ -7,6 +7,7 @@
 #include "types/model/model.h"
 
 class EQUATOR_data_loader;
+class EQUATOR_aggregator;
 
 class EQUATOR_C : public Model
 {
@@ -14,6 +15,7 @@ class EQUATOR_C : public Model
 public:
 
     friend class EQUATOR_data_loader;
+    friend class EQUATOR_aggregator;
 
     EQUATOR_C(EQUATOR *EQ,
               std::vector<int> dd, std::vector<int> dr, std::vector<int> dac,
