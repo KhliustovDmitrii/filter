@@ -3,8 +3,8 @@
 
 #include <vector>
 
-#include "../types/regularizer/regularizer.h"
-#include "../types/model/model.h"
+#include "types/regularizer/regularizer.h"
+#include "types/model/model.h"
 
 // detects model parmeters exceeding boundaries and crops them
 class Boundary_Projector : public Regularizer

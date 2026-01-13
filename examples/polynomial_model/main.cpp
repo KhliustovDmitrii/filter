@@ -12,6 +12,7 @@ int main()
 {
     int i, iter;
     double residual, residual_min;
+    double factor;
 
     // ------------ MODEL
 
@@ -94,7 +95,8 @@ int main()
     for(iter=0; iter<10; iter++)
     {
         filter_uns.get_update(measurements, upd_vec, upd_cov);
-        updater.update(upd_vec, measurements);
+        factor = updater.update(upd_vec, measurements);
+        //filter_uns.update_covariance(upd_cov, factor);
 
         model.response(response);
         std::cout << "+++++   ";

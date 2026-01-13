@@ -1,19 +1,19 @@
 #include "kalman_extended.h"
 
-void Kalman_Extended::get_update(double *mes, double *upd_vec, double *upd_cov) 
+void Kalman_Extended::get_update(std::vector<double> &mes, std::vector<double> &upd_vec, std::vector<double> &upd_cov) 
 {
     int i;
-    double resp[m->forward_size];
+    std::vector<double> resp(m->forward_size, 0);
    
-    Kalman_Extended::get_jacobian();
+    get_jacobian();
     m->response(resp);
    
-    std::memset(upd_vec, 0, sizeof(double)*m->num_pars);
-    std::memcpy(upd_cov, 0, sizeof(double)*m->num_pars*m->num_pars);
+    std::fill(upd_vec.begin(), upd_vec.end(), 0);
+    std::copy(S.begin(), S.end(), upd_cov.begin());
 
     // process each observation and update parameters accordingly
     for(i=0; i<m->forward_size; i++)
-        Kalman_Extended::proc(i, upd_vec, upd_cov, resp[i] - mes[i]);
+        proc(i, upd_vec, upd_cov, resp[i] - mes[i]);
 }
 
 void Kalman_Extended::get_jacobian()
@@ -22,7 +22,8 @@ void Kalman_Extended::get_jacobian()
     double h = 0.001;
     double param;
 
-    double resp_ini[m->forward_size], resp_var[m->forward_size];
+    std::vector<double> resp_ini(m->forward_size, 0);
+    std::vector<double> resp_var(m->forward_size, 0);
    
     m->response(resp_ini);
    
@@ -41,16 +42,16 @@ void Kalman_Extended::get_jacobian()
     }
 }
 
-void Kalman_Extended::proc(int i, double *upd_vec, double *upd_cov, double delta)
+void Kalman_Extended::proc(int k, std::vector<double> &upd_vec, std::vector<double> &upd_cov, double delta)
 {
-    int i,j,k;
+    int i,j;
     double d[2], bk,ck,dz, tmp;
 
     double f[m->num_pars];
     double e[m->num_pars];
 
-    double *h = &Jacobian[i*m->num_pars];
-    double r = R[i*m->forward_size + i]*R[i*m->forward_size + i];
+    double *h = &Jacobian[k*m->num_pars];
+    double r = R[k*m->forward_size + k]*R[k*m->forward_size + k];
     
     std::memset(e, 0, sizeof(double)*m->num_pars);
 

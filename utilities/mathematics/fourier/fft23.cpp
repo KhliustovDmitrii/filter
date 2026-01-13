@@ -153,7 +153,7 @@ for(;order<fft->order2+fft->order3;order++) {
        temp2 = temp + temp1;   // sum
        temp  = temp - temp1;  
        temp1 = 1i*(real(temp)*SQRT3D2) -   (imag(temp)*SQRT3D2);  // i*diff*sqrt3/2
-       temp  =   (.5*real(temp2))     + I*(.5*imag(temp2))    ;  // half sum
+       temp  =   (.5*real(temp2))     + 1i*(.5*imag(temp2))    ;  // half sum
        fft->fn[mpnd3] = fft->fn[m] - temp - temp1;
        fft->fn[mpnd2] = fft->fn[m] - temp + temp1;
        fft->fn[m]     = fft->fn[m] + temp2;

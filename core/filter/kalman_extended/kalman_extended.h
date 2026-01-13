@@ -4,8 +4,8 @@
 #include <cstring>
 #include <vector>
 #include <cmath>
-#include "../types/model/model.h"
-#include "../types/filter/probabilistic_filter.h"
+#include "types/model/model.h"
+#include "types/filter/probabilistic_filter.h"
 
 // extended Kalman filter implementation
 class Kalman_Extended : public Probabilistic_Filter
@@ -20,14 +20,14 @@ private:
     void get_jacobian();
 
     // inner fuction for calculating update
-    void proc(int i, double *upd_vec, double *upd_cov, double delta);
+    void proc(int k, std::vector<double> &upd_vec, std::vector<double> &upd_cov, double delta);
 
 public:
     Kalman_Extended(Model *model) 
     : Probabilistic_Filter(model), Jacobian(model->num_pars*model->forward_size, 0){};
 
-    void get_update(double *mes, double *upd_vec, double *upd_cov);
-
-
+    void get_update(std::vector<double> &mes,
+                    std::vector<double> &upd_vec, 
+                    std::vector<double> &upd_cov);
 };
 #endif

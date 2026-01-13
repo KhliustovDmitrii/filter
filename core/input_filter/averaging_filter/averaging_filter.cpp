@@ -1,6 +1,6 @@
 #include <algorithm>
 
-#include "./averaging_filter.h"
+#include "averaging_filter.h"
 
 int Averaging_Filter::add_data(std::vector<double> &data, std::vector<double> &output)
 {

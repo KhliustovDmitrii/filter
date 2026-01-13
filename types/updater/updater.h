@@ -12,7 +12,7 @@ protected:
 
 public:
 
-    virtual double update(double *upd_vec, double *mes) = 0;
+    virtual double update(std::vector<double> &upd_vec, std::vector<double> &mes) = 0;
 
     Updater(Model *model) : m(model){};
     virtual ~Updater() = default;

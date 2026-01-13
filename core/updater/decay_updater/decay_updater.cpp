@@ -1,9 +1,9 @@
 #include "decay_updater.h"
 
-double Decay_Updater::update(double *upd_vec, double *mes)
+double Decay_Updater::update(std::vector<double> &upd_vec, std::vector<double> &mes)
 {
     int i, count;
-    double resp[m->forward_size];
+    std::vector<double> resp(m->forward_size, 0);
     std::vector<double> old_pars = std::vector<double>(m->num_pars);
     double res_old, res_new;
     double total_factor = 1;

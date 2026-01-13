@@ -2,7 +2,7 @@
 #define _AVERAGING_FILTER_H_
 
 #include <vector>
-#include "../types/input_filter/input_filter.h"
+#include "types/input_filter/input_filter.h"
 
 // simple iput data filter
 // averages specified number of input vectors

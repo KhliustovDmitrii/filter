@@ -21,10 +21,10 @@ public:
     int forward_size;
 
     // forward function
-    virtual void response(double *resp_arr) = 0;
+    virtual void response(std::vector<double> &resp_arr) = 0;
 
     // proximity in response between model and measurements
-    virtual double residual(double *mes, double *resp) = 0;
+    virtual double residual(std::vector<double> &mes, std::vector<double> &resp) = 0;
 
     // getters and setters
     virtual void set_param(int ind, double val) = 0;

@@ -1,7 +1,7 @@
 #include <cmath>
 
 #include "kalman_unscented.h"
-#include "../../../utilities/mathematics/matrix.h"
+#include "utilities/mathematics/matrix/matrix.h"
 
 // sigma point computation
 void Kalman_Unscented::compute_sigma()
@@ -15,8 +15,8 @@ void Kalman_Unscented::compute_sigma()
     {
         for(j=0; j<m->num_pars; j++)
         {
-            x_sigma[i*m->num_pars + j] = m->get_param(j) + sq_n*S[i*m->num_pars + j];
-            x_sigma[(i+m->num_pars)*m->num_pars + j] = m->get_param(j) - sq_n*S[i*m->num_pars + j];
+            x_sigma[i][j] = m->get_param(j) + sq_n*S[i*m->num_pars + j];
+            x_sigma[i+m->num_pars][j] = m->get_param(j) - sq_n*S[i*m->num_pars + j];
         }
     }
    
@@ -30,9 +30,9 @@ void Kalman_Unscented::compute_sigma()
     for(i=0; i<2*m->num_pars; i++)
     {
         for(j=0; j<m->num_pars; j++)
-            m->set_param(j, x_sigma[i*m->num_pars+j]);
+            m->set_param(j, x_sigma[i][j]);
 
-        m->response(&(y_sigma[i*m->forward_size]));
+        m->response(y_sigma[i]);
     }
    
     // restore the state
@@ -49,7 +49,7 @@ void Kalman_Unscented::get_matrices()
     std::fill(y_avg.begin(), y_avg.end(), 0);
     for(i=0; i<2*m->num_pars; i++)
         for(j=0; j<m->forward_size; j++)
-            y_avg[j] = y_avg[j] + y_sigma[i*m->forward_size + j]/(2*m->num_pars);
+            y_avg[j] = y_avg[j] + y_sigma[i][j]/(2*m->num_pars);
    
     // response covariance
     for(i=0; i<m->forward_size; i++)
@@ -58,7 +58,7 @@ void Kalman_Unscented::get_matrices()
             P_y[i*m->forward_size + j] = R[i*m->forward_size + j];
             for(k=0; k<2*m->num_pars; k++)
                 P_y[i*m->forward_size + j] = P_y[i*m->forward_size + j] + 
-                (y_sigma[k*m->forward_size + i] - y_avg[i])*(y_sigma[k*m->forward_size + j] - y_avg[j])/(2*m->num_pars);
+                (y_sigma[k][i] - y_avg[i])*(y_sigma[k][j] - y_avg[j])/(2*m->num_pars);
         }
    
     // cross-covariance
@@ -68,7 +68,7 @@ void Kalman_Unscented::get_matrices()
             P_xy[i*m->forward_size + j] = 0;
             for(k=0; k<2*m->num_pars; k++)
                 P_xy[i*m->forward_size + j] = P_xy[i*m->forward_size + j] + 
-                (x_sigma[k*m->num_pars + i] - m->get_param(i))*(y_sigma[k*m->forward_size + j] - y_avg[j])/(2*m->num_pars);
+                (x_sigma[k][i] - m->get_param(i))*(y_sigma[k][j] - y_avg[j])/(2*m->num_pars);
         }
    
     // Kalman gain
@@ -87,17 +87,20 @@ void Kalman_Unscented::get_matrices()
         }
 }
 
-void Kalman_Unscented::get_update(double *mes, double *upd_vec, double *upd_cov)
+void Kalman_Unscented::get_update(std::vector<double> &mes, std::vector<double> &upd_vec, std::vector<double> &upd_cov)
 {
     int i, j, k;
    
-    memset(upd_vec, 0, m->num_pars*sizeof(double));
-    memset(upd_cov, 0, m->num_pars*m->num_pars*sizeof(double));
+    std::fill(upd_vec.begin(), upd_vec.end(), 0);
+    std::fill(upd_cov.begin(), upd_cov.end(), 0);
+
+    compute_sigma();
+    get_matrices();
    
     // parameter update
     for(i=0; i<m->num_pars; i++)
         for(j=0; j<m->forward_size; j++)
-            upd_vec[i] = upd_vec[i] + K[i*m->forward_size + j]*(mes[j] - y_avg[j]);
+            upd_vec[i] = upd_vec[i] - K[i*m->forward_size + j]*(mes[j] - y_avg[j]);
          
     // covariance update
     std::fill(S_aux_1.begin(), S_aux_1.end(), 0);
@@ -119,4 +122,25 @@ void Kalman_Unscented::get_update(double *mes, double *upd_vec, double *upd_cov)
             for(k=0; k<m->forward_size; k++)
                 upd_cov[i*m->num_pars + j] = upd_cov[i*m->num_pars + j] + S_aux_1[i*m->forward_size + k]*K[j*m->forward_size + k];
         }
+}
+
+void Kalman_Unscented::update_covariance(std::vector<double> &upd_cov, double factor)
+{
+   int i, count, j, k;
+   
+   std::fill(P.begin(), P.end(), 0);
+
+   // compute P = St S
+   for(i=0; i<m->num_pars; i++)
+      for(j=0; j<m->num_pars; j++)
+         for(k=0; k<m->num_pars; k++)
+            P[i*m->num_pars + j] = P[i*m->num_pars + j] + S[k*m->num_pars + i]*S[k*m->num_pars + j];
+   
+   // P - K P_y Kt
+   for(i=0; i<m->num_pars; i++)
+      for(j=0; j<m->num_pars; j++)
+         P[i*m->num_pars + j] = P[i*m->num_pars + j] - upd_cov[i*m->num_pars + j]*factor*factor;
+            
+   // go back to square root of P = St S
+   matrix_square_root(S, P, m->num_pars);
 }

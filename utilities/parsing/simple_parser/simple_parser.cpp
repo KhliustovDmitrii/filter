@@ -9,14 +9,13 @@ int Simple_Parser::read(std::vector<double> &dest, std::string &label)
         if(line.find(str) != std::string::npos) return 1;
 
     // cut off the label
-    label = line.substr(label_size);
+    label = line.substr(0, label_size);
 
     // finite automata for string parsing
-    int i, m_num, pos, is_digit;
+    int i, m_num, is_digit;
     std::string tmp;
 
     is_digit = 0;
-    pos = 0;
     m_num = 0;
     for(i = label_size; i<line.size(); i++)
     {
@@ -28,18 +27,17 @@ int Simple_Parser::read(std::vector<double> &dest, std::string &label)
                 dest[m_num] = std::stod(tmp);
                 m_num++;
                 tmp.clear();
-                pos = 0;
             }
             is_digit = 0;
             continue;
         }
 
         // numeric character or decimal
-        if(line[i] == decimal) tmp[pos] = '.';
-        else tmp[pos] = line[i];
+        if(line[i] == decimal) tmp.push_back('.');
+        else tmp.push_back(line[i]);
 
-        pos++;
         is_digit = 1;
     }
 
+    return 0;
 }

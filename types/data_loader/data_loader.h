@@ -18,6 +18,8 @@ public:
 
     virtual ~Data_Loader() = default;
 
+    void get_measurements(std::vector<double> &mes);
+
 protected:
     std::vector<double> measurements;
 };
