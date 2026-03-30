@@ -1,11 +1,13 @@
-#ifndef _DATA_LOADER_H_
-#define _DATA_LOADER_H_
+#ifndef DATA_LOADER_H
+#define DATA_LOADER_H
 
 #include <vector>
 #include "../model/model.h"
 
 // class for splitting input data to model parameters and mesurements
 
+namespace filter::io
+{
 class Data_Loader
 {
 public:
@@ -23,5 +25,5 @@ public:
 protected:
     std::vector<double> measurements;
 };
-
+}; // filter::io
 #endif

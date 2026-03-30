@@ -2,6 +2,8 @@
 
 #include "averaging_filter.h"
 
+namespace filter::components
+{
 int Averaging_Filter::add_data(std::vector<double> &data, std::vector<double> &output)
 {
     int i;
@@ -24,3 +26,4 @@ int Averaging_Filter::add_data(std::vector<double> &data, std::vector<double> &o
 
     return 1;
 }
+}; // filter::components

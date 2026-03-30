@@ -6,6 +6,9 @@
 
 #include "fft23.h"
 
+namespace filter::math
+{
+
 #define SQRT3D2 .8660254037844386
 
 void inv_ind(FFT *fft) 
@@ -177,4 +180,5 @@ if(!inv) {
 
 }
 
+}; // filter::math
 

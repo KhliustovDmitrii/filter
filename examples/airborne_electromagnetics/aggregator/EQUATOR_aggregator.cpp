@@ -2,6 +2,8 @@
 
 #include "EQUATOR_aggregator.h"
 
+namespace filter::examples
+{
 // function for aggregating resistivities in several models
 // Side effect: modifies out
 void EQUATOR_aggregator::aggregate(std::vector<double> weights)
@@ -11,9 +13,9 @@ void EQUATOR_aggregator::aggregate(std::vector<double> weights)
 
     // process all layers of out model
     depth = 0;
-    for(lnum=0; lnum<out_model->E->num_layers; lnum++)
+    for(lnum=0; lnum<out_model.E.num_layers; lnum++)
     {
-        depth = depth + out_model->E->depths[lnum];
+        depth = depth + out_model.E.depths[lnum];
         rho = 0;
         for(mnum=0; mnum<source_models.size(); mnum++)
         {
@@ -22,18 +24,19 @@ void EQUATOR_aggregator::aggregate(std::vector<double> weights)
 
             // find the layer in source models which covers the current layer
             // in out model
-            while(lcount < source_models[mnum]->E->num_layers - 1 &&
+            while(lcount < source_models[mnum]->E.num_layers - 1 &&
                 depth_m < depth)
             {
                 lcount++;
-                depth_m += source_models[mnum]->E->depths[lcount];
+                depth_m += source_models[mnum]->E.depths[lcount];
             }
 
-            rho = rho + weights[mnum]*source_models[mnum]->E->rhos[lcount];
+            rho = rho + weights[mnum]*source_models[mnum]->E.rhos[lcount];
         }
 
-        out_model->E->rhos[lnum] = rho;
+        out_model.E.rhos[lnum] = rho;
     }
 
-    out_model->full_to_c();
+    out_model.full_to_c();
 }
+}; // filter::examples

@@ -1,23 +1,25 @@
-#ifndef _EQUATOR_DATA_LOADER_H_
-#define _EQUATOR_DATA_LOADER_H_
+#ifndef EQUATOR_DATA_LOADER_H
+#define EQUATOR_DATA_LOADER_H
 
 #include "types/data_loader/data_loader.h"
 #include "../model/EQUATOR_C/EQUATOR_C.h"
 
+namespace filter::examples
+{
 // data loader for equator model and data
-class EQUATOR_data_loader : public Data_Loader
+class EQUATOR_data_loader : public filter::io::Data_Loader
 {
 public:
 
     virtual void load(const std::vector<double> & data) override;
 
-    EQUATOR_data_loader(EQUATOR_C *Eq, int hdp, int vdp, int ap, int frp, int fip, int cp, int sr, int si, int st):
-    Data_Loader(Eq->forward_size), E(Eq), hor_dist_pos(hdp), ver_dist_pos(vdp), alt_pos(ap),
+    EQUATOR_data_loader(EQUATOR_C &Eq, int hdp, int vdp, int ap, int frp, int fip, int cp, int sr, int si, int st):
+    Data_Loader(Eq.forward_size), E(Eq), hor_dist_pos(hdp), ver_dist_pos(vdp), alt_pos(ap),
     freq_re_pos(frp), freq_im_pos(fip), chan_pos(cp), sign_re(sr), sign_im(si), sign_td(st){};
 
 private:
 
-    EQUATOR_C *E;
+    EQUATOR_C &E;
 
     int hor_dist_pos; // position of hor dist in data vector
     int ver_dist_pos; // position of ver dist in data vector
@@ -31,4 +33,5 @@ private:
     int sign_im;      // sign for imaginary component
     int sign_td;      // sign for td component
 };
+}; // filter::examples
 #endif

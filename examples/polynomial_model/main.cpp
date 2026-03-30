@@ -21,16 +21,16 @@ int main()
     // target model
 
     std::vector<double> coeffs{1, 2, 3};
-    Polynomial_Model target_model(points, coeffs, 2);
+    filter::examples::Polynomial_Model target_model(points, coeffs, 2);
 
     // model to fit
     std::vector<double> start_coeffs(coeffs.size(), 0);
-    Polynomial_Model model(points, start_coeffs, 2);
+    filter::examples::Polynomial_Model model(points, start_coeffs, 2);
 
     // ------------ FILTER
 
     // extended
-    Kalman_Extended filter_ext(&model);
+    filter::Kalman_Extended filter_ext(model);
 
     auto R = filter_ext.get_R();
     auto S = filter_ext.get_S();
@@ -47,7 +47,7 @@ int main()
     filter_ext.set_S(S);
 
     // unscented
-    Kalman_Unscented filter_uns(&model);
+    filter::Kalman_Unscented filter_uns(model);
 
     filter_uns.set_R(R);
     filter_uns.set_S(S);
@@ -55,7 +55,7 @@ int main()
 
     // ------------ UPDATER
 
-    Decay_Updater updater(&model, 3, 0.5);
+    filter::Decay_Updater updater(model, 3, 0.5);
 
     std::vector<double> measurements(target_model.forward_size, 0);
     std::vector<double> response(model.forward_size, 0);

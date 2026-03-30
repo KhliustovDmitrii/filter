@@ -1,9 +1,11 @@
-#ifndef _READER_H_
-#define _READER_H_
+#ifndef READER_H
+#define READER_H
 
 #include <vector>
 #include <fstream>
 
+namespace filter::io
+{
 // reads data line by line, processes, stores into vector
 class Reader
 {
@@ -29,5 +31,5 @@ protected:
     std::ifstream file;
 
 };
-
+}; // filter::io
 #endif

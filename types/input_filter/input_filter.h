@@ -1,8 +1,10 @@
-#ifndef _INPUT_FILTER_H_
-#define _INPUT_FILTER_H_
+#ifndef INPUT_FILTER_H
+#define INPUT_FILTER_H
 
 #include <vector>
 
+namespace filter::components
+{
 // reads incoming data vector, processes, [outputs filtered data vector]
 class Input_Filter
 {
@@ -13,4 +15,5 @@ public:
 
     virtual ~Input_Filter() = default;
 };
+}; // filter::components
 #endif

@@ -1,11 +1,13 @@
-#ifndef _EQUATOR_C_H_
-#define _EQUATOR_C_H_
+#ifndef EQUATOR_C_H
+#define EQUATOR_C_H
 
 // compressed representation of EQUATOR
 // complies to model interface
 #include "../EQUATOR/EQUATOR.h"
 #include "types/model/model.h"
 
+namespace filter::examples
+{
 class EQUATOR_data_loader;
 class EQUATOR_aggregator;
 
@@ -17,45 +19,43 @@ public:
     friend class EQUATOR_data_loader;
     friend class EQUATOR_aggregator;
 
-    EQUATOR_C(EQUATOR *EQ,
-              std::vector<int> dd, std::vector<int> dr, std::vector<int> dac,
-              std::vector<int> dcr, std::vector<int> dct, std::vector<int> dcc,
-              std::vector<int> sd, std::vector<int> sr, std::vector<int> sac,
-              std::vector<int> scr, std::vector<int> sct, std::vector<int> scc,
-              std::vector<double> w) :
-              Model(),
-              E(EQ), diff_depth(dd), diff_rho(dr), diff_alt_cor(dac),
-              diff_cole_rho(dcr), diff_cole_tau(dct), diff_cole_c(dcc),
-              scale_depth(sd), scale_rho(sr), scale_alt_cor(sac),
-              scale_cole_rho(scr), scale_cole_tau(sct), scale_cole_c(scc),
-              weights(w)
+    EQUATOR_C(EQUATOR &EQ,
+              std::vector<int> diff_depth_, std::vector<int> diff_rho_, 
+              std::vector<int> diff_alt_cor_,
+              std::vector<int> diff_cole_rho_, std::vector<int> diff_cole_tau_, 
+              std::vector<int> diff_cole_c_,
+              std::vector<int> scale_depth_, std::vector<int> scale_rho_, 
+              std::vector<int> scale_alt_cor_,
+              std::vector<int> scale_cole_rho_, std::vector<int> scale_cole_tau_, 
+              std::vector<int> scale_cole_c_,
+              std::vector<double> weights_) :
+              Model(
+                diff_depth_.size() + diff_rho_.size() + diff_alt_cor_.size() +
+                diff_cole_rho_.size() + diff_cole_tau_.size() + diff_cole_c_.size(),
+                2 * E.num_freqs + E.num_channels),
+              E(EQ), diff_depth(diff_depth_), diff_rho(diff_rho_), diff_alt_cor(diff_alt_cor_),
+              diff_cole_rho(diff_cole_rho_), diff_cole_tau(diff_cole_tau_), diff_cole_c(diff_cole_c_),
+              scale_depth(scale_depth_), scale_rho(scale_rho_), scale_alt_cor(scale_alt_cor_),
+              scale_cole_rho(scale_cole_rho_), scale_cole_tau(scale_cole_tau_), scale_cole_c(scale_cole_c_),
+              weights(weights_)
               {
-
-                // components of the interface
-                num_pars = diff_depth.size() + diff_rho.size() + diff_alt_cor.size() +
-                diff_cole_rho.size() + diff_cole_tau.size() + diff_cole_c.size();
-
-                forward_size = 2 * E->num_freqs + E->num_channels;
-
-                params_.resize(num_pars, 0.0);
-
                 // set up params equal to full EQUATOR's
                 full_to_c();
               };
 
     // forward function
-    virtual void response(std::vector<double> &resp_arr) override;
+    virtual void response(std::vector<double> &resp_arr) const override;
 
     // proximity in response between model and measurements
-    virtual double residual(std::vector<double> &mes, std::vector<double> &resp) override;
+    virtual double residual(std::vector<double> &mes, std::vector<double> &resp) const override;
 
     // getters and setters
     virtual void set_param(int ind, double val) override;
-    virtual double get_param(int ind) override;
+    virtual double get_param(int ind) const override;
 
 private:
 
-    EQUATOR *E;
+    EQUATOR &E;
 
     // differentiability of EQUATOR model parameters
     std::vector<int> diff_depth, diff_rho;
@@ -77,5 +77,5 @@ private:
     void c_to_full();
     void full_to_c();
 };
-
+}; // filter::examples
 #endif

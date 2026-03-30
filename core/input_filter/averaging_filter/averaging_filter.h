@@ -1,10 +1,12 @@
-#ifndef _AVERAGING_FILTER_H_
-#define _AVERAGING_FILTER_H_
+#ifndef AVERAGING_FILTER_H
+#define AVERAGING_FILTER_H
 
 #include <vector>
 #include "types/input_filter/input_filter.h"
 
-// simple iput data filter
+namespace filter::components
+{
+// simple input data filter
 // averages specified number of input vectors
 class Averaging_Filter : public Input_Filter
 {
@@ -16,9 +18,9 @@ private:
 
 public:
 
-    Averaging_Filter(int w_size, int m_size) : 
-    window_size(w_size),
-    mes_state(m_size, 0),
+    Averaging_Filter(int window_size_, int mes_size_) : 
+    window_size(window_size_),
+    mes_state(mes_size_, 0),
     agg_state(0){};
 
     // return codes:
@@ -27,4 +29,5 @@ public:
     // 1    succesfully added, have more data to read (agg_state < window_size)
     virtual int add_data(std::vector<double> &data, std::vector<double> &output) override;
 };
+}; // filter::components
 #endif

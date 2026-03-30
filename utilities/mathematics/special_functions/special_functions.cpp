@@ -2,6 +2,8 @@
 
 #include "special_functions.h"
 
+namespace filter::math
+{
 double bessj0(double x)
 {
    double ax,z;
@@ -102,3 +104,4 @@ double inverse_transform_function_dispatch(double x, int t)
 
    return x;
 }
+}; // filter::math

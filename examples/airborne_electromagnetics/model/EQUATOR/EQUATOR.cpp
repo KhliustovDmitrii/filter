@@ -6,6 +6,8 @@
 #include "utilities/mathematics/spline/spline.h"
 #include "utilities/mathematics/special_functions/special_functions.h"
 
+namespace filter::examples
+{
 void EQUATOR::forward()
 {
     int i;
@@ -27,7 +29,7 @@ void EQUATOR::forward()
 void EQUATOR::td_forward(std::vector<double> &dest)
 {
     using namespace std::complex_literals;
-    spline sr, si;
+    filter::math::spline sr, si;
     int i, j;
    
     // fulltime frequency response
@@ -173,7 +175,7 @@ std::complex<double> EQUATOR::PartSum(double n0, double hh, double r, std::compl
     std::complex<double> s;
     
     if(fabs(r)>.001)
-        s = bessj0(n0*r);
+        s = filter::math::bessj0(n0*r);
     else 
         s  = 1;
 
@@ -230,3 +232,4 @@ void EQUATOR::print_to_file(std::ofstream &out)
         depp+=depths[i];
     }
 }
+}; // filter::examples

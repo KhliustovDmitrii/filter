@@ -1,10 +1,10 @@
-#ifndef _FFT23_H_
-
-#define _FFT23_H_
+#ifndef FFT23_H
+#define FFT23_H
 
 #include <complex>
 
-
+namespace filter::math
+{
 typedef struct
 {
     int n;
@@ -22,5 +22,5 @@ void FFT_free_full(FFT *);
 void fft_pro(FFT *,int);
 void init_fft(FFT *fft, int n);
 
-
+}; // filter::math
 #endif

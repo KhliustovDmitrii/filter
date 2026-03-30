@@ -1,5 +1,5 @@
-#ifndef _EQUATOR_H_
-#define _EQUATOR_H_
+#ifndef EQUATOR_H
+#define EQUATOR_H
 // main model for airborne electromagnetics
 // transmitter and receiver are coils parallel to the ground
 
@@ -8,6 +8,8 @@
 
 #include "utilities/mathematics/fourier/fft23.h"
 
+namespace filter::examples
+{
 const double mu0 = M_PI*.4e-6;
 
 class EQUATOR
@@ -106,7 +108,7 @@ private:
     std::vector<std::complex<double>> resp_fd, resp_fd_fulltime;
 
     std::vector<std::complex<double>> impulse_spec;
-    FFT fft;
+    filter::math::FFT fft;
 
     // auxillary functions for computations
     std::complex<double> PartSum(double n0, double hh, double r, std::complex<double> n1, std::complex<double> Imp);
@@ -116,5 +118,5 @@ private:
     void fd_forward(std::vector<std::complex<double>> &dest, std::vector<double> &frs);
     void td_forward(std::vector<double> &dest);
 };
-
+}; // filter::examples
 #endif

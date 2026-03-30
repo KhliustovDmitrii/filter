@@ -1,9 +1,11 @@
-#ifndef _SIMPLE_PARSER_H_
-#define _SIMPLE_PARSER_H_
+#ifndef SIMPLE_PARSER_H
+#define SIMPLE_PARSER_H
 
 #include "../../../types/reader/reader.h"
 // reads input string and parses to label and numeric data
 
+namespace filter::io
+{
 class Simple_Parser : public Reader
 {
 
@@ -14,10 +16,10 @@ public:
     // -1 - error during parsing
     virtual int read(std::vector<double> &dest, std::string &label) override;
 
-    Simple_Parser(std::string fname, char s, char d, int ls, 
-                  std::vector<std::string> dr) :
+    Simple_Parser(std::string fname, char separator_, char decimal_, int label_size_, 
+                  std::vector<std::string> drop_) :
     Reader(fname),
-    separator(s), decimal(d), label_size(ls), drop(dr) {};
+    separator(separator_), decimal(decimal_), label_size(label_size_), drop(drop_) {};
 
 private:
 
@@ -33,4 +35,6 @@ private:
                                       // - usually comments or missing measurements
 
 };
+
+}; // filter::io
 #endif

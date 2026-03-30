@@ -1,5 +1,7 @@
 #include "simple_parser.h"
 
+namespace filter::io
+{
 int Simple_Parser::read(std::vector<double> &dest, std::string &label)
 {
     if(!std::getline(file, line)) return -1;
@@ -41,3 +43,4 @@ int Simple_Parser::read(std::vector<double> &dest, std::string &label)
 
     return 0;
 }
+}; // filter::io

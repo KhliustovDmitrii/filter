@@ -21,14 +21,14 @@ int main(int argc, char *argv[])
    
   for(i=0; i<2592; i++) wf >> waveform[i];
 
-  FFT imp_fft;
+  filter::math::FFT imp_fft;
   memset(&imp_fft, 0, sizeof(imp_fft));
   
-  init_fft(&imp_fft,2592);
+  filter::math::init_fft(&imp_fft,2592);
   for(i=0;i<2592;i++)
     imp_fft.xn[i] = waveform[i];
     
-  fft_pro(&imp_fft,0);
+  filter::math::fft_pro(&imp_fft,0);
 
   // ------------ MODEL
 
@@ -44,16 +44,16 @@ int main(int argc, char *argv[])
 
   std::vector<double> chans = {1, 2, 3, 5, 7, 12, 19, 30, 49, 79, 128, 207, 336, 545, 884};
 
-  double prim_field = primField(32, 25)/10000;
+  double prim_field = filter::math::primField(32, 25)/10000;
 
   std::vector<std::complex<double>> spec;
   for(i=0;i<2592;i++)
     spec.push_back(imp_fft.fn[i]);
 
-  EQUATOR full_model(num_layers, pol_inds, rho_ini, freqs, chans, prim_field, spec);
+  filter::examples::EQUATOR full_model(num_layers, pol_inds, rho_ini, freqs, chans, prim_field, spec);
 
   // reduced
-  EQUATOR reduced_model(1, {}, 100, {77.1, 231.5}, {1}, prim_field, {1});
+  filter::examples::EQUATOR reduced_model(1, {}, 100, {77.1, 231.5}, {1}, prim_field, {1});
 
   // ------------ ADAPTER
 
@@ -78,10 +78,10 @@ int main(int argc, char *argv[])
   for(i=0; i<noise_fd.size(); i++) weights.push_back(noise_fd[i]);
   for(i=0; i<noise_td.size(); i++) weights.push_back(noise_td[i]);
 
-  EQUATOR_C adapter(&full_model, empty, dr, dac, empty, empty, empty, empty, sr, sac, empty, empty, empty, weights);
+  filter::examples::EQUATOR_C adapter(full_model, empty, dr, dac, empty, empty, empty, empty, sr, sac, empty, empty, empty, weights);
 
   // reduced
-  EQUATOR_C adapter_red(&reduced_model, {}, {0}, {}, {}, {}, {}, {}, {2}, {}, {}, {}, {}, {0.2, 1000, 0.2, 0.2});
+  filter::examples::EQUATOR_C adapter_red(reduced_model, {}, {0}, {}, {}, {}, {}, {}, {2}, {}, {}, {}, {}, {0.2, 1000, 0.2, 0.2});
 
   // ------------ READER
   char sep = ' ';
@@ -91,23 +91,23 @@ int main(int argc, char *argv[])
   drops.push_back("/");
   drops.push_back("L");
 
-  Simple_Parser parser(std::string(argv[1]), sep, dec, time_size, drops);
+  filter::io::Simple_Parser parser(std::string(argv[1]), sep, dec, time_size, drops);
 
   // ------------ INPUT FILTER
-  Averaging_Filter input_filter(4, 256);
+  filter::components::Averaging_Filter input_filter(4, 256);
 
   // ------------ DATA LOADER
 
   // full
-  EQUATOR_data_loader data_loader(&adapter, 0, 1, 2, 3, 24, 45, -1, 1, 1);
+  filter::examples::EQUATOR_data_loader data_loader(adapter, 0, 1, 2, 3, 24, 45, -1, 1, 1);
 
   // reduced
-  EQUATOR_data_loader data_loader_red(&adapter_red, 0, 1, 2, 3, 24, 45, -1, 1, 1);
+  filter::examples::EQUATOR_data_loader data_loader_red(adapter_red, 0, 1, 2, 3, 24, 45, -1, 1, 1);
 
   // ------------ FILTER - EXTENDED
 
   // full
-  Kalman_Extended filter_ext(&adapter);
+  filter::Kalman_Extended filter_ext(adapter);
   std::vector<double> R = filter_ext.get_R();
   std::vector<double> S = filter_ext.get_S();
 
@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
   filter_ext.set_S(S);
 
   // reduced
-  Kalman_Extended filter_ext_red(&adapter_red);
+  filter::Kalman_Extended filter_ext_red(adapter_red);
   R = filter_ext_red.get_R();
   S = filter_ext_red.get_S();
 
@@ -160,8 +160,8 @@ int main(int argc, char *argv[])
   filter_ext_red.set_S(S);
 
   // ------------ UPDATER
-  Decay_Updater updater(&adapter, 3, 0.5);
-  Decay_Updater updater_red(&adapter_red, 3, 0.5);
+  filter::Decay_Updater updater(adapter, 3, 0.5);
+  filter::Decay_Updater updater_red(adapter_red, 3, 0.5);
 
   // ------------ REGULARIZER
   // TODO

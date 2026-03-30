@@ -1,11 +1,13 @@
-#ifndef _WRITER_H_
-#define _WRITER_H_
+#ifndef WRITER_H
+#define WRITER_H
 
 #include <vector>
 #include <fstream>
 
 #include "../model/model.h"
 
+namespace filter::io
+{
 // stores model state to file
 class Writer
 {
@@ -13,7 +15,7 @@ public:
 
     virtual int write() = 0;
 
-    Writer(std::string filename) : file(filename) 
+    Writer(std::string filename, Model& m_) : file(filename), m(m_)
     {
         if (!file.is_open()) {
             throw std::runtime_error("Cannot open file: " + filename);
@@ -27,8 +29,8 @@ protected:
     // file to output to
     std::ofstream file;
 
-    Model *m;
+    Model &m;
 
 };
-
+}; // filter::io
 #endif

@@ -1,11 +1,13 @@
-#ifndef _AGGREGATOR_H_
-#define _AGGREGATOR_H_
+#ifndef AGGREGATOR_H
+#define AGGREGATOR_H
 
 // class for aggregating several models
 #include <vector>
 
 #include "../model/model.h"
 
+namespace filter::components
+{
 class Aggregator
 {
 public:
@@ -13,5 +15,5 @@ public:
 
     virtual ~Aggregator() = default;
 };
-
+}; // filter::components
 #endif

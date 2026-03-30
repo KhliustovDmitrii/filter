@@ -2,7 +2,9 @@
 
 #include "polynomial_model.h"
 
-void Polynomial_Model::response(std::vector<double> &resp_arr)
+namespace filter::examples
+{
+void Polynomial_Model::response(std::vector<double> &resp_arr) const
 {
     int i, j;
     double xn;
@@ -20,7 +22,7 @@ void Polynomial_Model::response(std::vector<double> &resp_arr)
     }
 }
 
-double Polynomial_Model::residual(std::vector<double> &mes, std::vector<double> &resp)
+double Polynomial_Model::residual(std::vector<double> &mes, std::vector<double> &resp) const
 {
     int i;
     double res, term;
@@ -43,7 +45,8 @@ void Polynomial_Model::set_param(int ind, double val)
     params_[ind] = val;
 }
 
-double Polynomial_Model::get_param(int ind)
+double Polynomial_Model::get_param(int ind) const
 {
     return params_[ind];
 }
+}; // filter::examples

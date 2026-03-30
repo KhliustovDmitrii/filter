@@ -1,6 +1,8 @@
 #include <cmath>
 #include "matrix.h"
 
+namespace filter::math
+{
 void invert_matrix(std::vector<double> &dest, std::vector<double> &source, int dim)
 {
    int i, j, k;
@@ -81,3 +83,5 @@ void matrix_square_root(std::vector<double> &dest, std::vector<double> &source, 
       }
    } 
 }
+
+} // filter::math
