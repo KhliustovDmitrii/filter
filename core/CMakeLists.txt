@@ -31,6 +31,7 @@ target_sources(core INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/../types/regularizer/regularizer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../types/updater/updater.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../types/writer/writer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../types/workspace/filter_workspace.h
 )
 
 # Add type implementations that exist

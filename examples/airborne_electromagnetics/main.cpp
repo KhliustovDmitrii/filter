@@ -9,17 +9,27 @@
 
 #include "utilities/parsing/simple_parser/simple_parser.h"
 #include "utilities/mathematics/special_functions/special_functions.h"
+
+#include "types/workspace/filter_workspace.h"
+
 #include <iostream>
+#include <vector>
 
 // Example of using the filter library for processing airborne electromagnetics data
 int main(int argc, char *argv[])
 {
   // ------------ WAVEFORM
   std::ifstream wf("waveform.XYZ");
-  double *waveform = new double[2592];
+  std::vector<double> waveform(2592, 0);
   int i;
-   
-  for(i=0; i<2592; i++) wf >> waveform[i];
+  
+
+  for(i=0; i<2592; i++)
+  {
+    double temp;
+    wf >> temp;
+    waveform.push_back(temp);
+  }
 
   filter::math::FFT imp_fft;
   memset(&imp_fft, 0, sizeof(imp_fft));
@@ -145,6 +155,8 @@ int main(int argc, char *argv[])
   filter_ext.set_R(R);
   filter_ext.set_S(S);
 
+  auto extended_ws_full = filter_ext.allocate_workspace();
+
   // reduced
   filter::Kalman_Extended filter_ext_red(adapter_red);
   R = filter_ext_red.get_R();
@@ -159,6 +171,7 @@ int main(int argc, char *argv[])
   filter_ext_red.set_R(R);
   filter_ext_red.set_S(S);
 
+  auto extended_ws_red = filter_ext_red.allocate_workspace();
   // ------------ UPDATER
   filter::Decay_Updater updater(adapter, 3, 0.5);
   filter::Decay_Updater updater_red(adapter_red, 3, 0.5);
@@ -198,7 +211,7 @@ int main(int argc, char *argv[])
 
     for(i=0; i<10; i++)
     {
-      filter_ext_red.get_update(measurements_red, upd_vec, upd_cov);
+      filter_ext_red.get_update(measurements_red, upd_vec, upd_cov, *extended_ws_red);
       updater_red.update(upd_vec, measurements_red);
 
       adapter_red.response(response);
@@ -221,7 +234,7 @@ int main(int argc, char *argv[])
 
     for(i=0; i<15; i++)
     {
-      filter_ext.get_update(measurements, upd_vec, upd_cov);
+      filter_ext.get_update(measurements, upd_vec, upd_cov, *extended_ws_full);
       updater.update(upd_vec, measurements);
 
       adapter.response(response);

@@ -2,7 +2,9 @@
 #define PROBABILISTIC_FILTER_H
 
 #include <vector>
+#include <memory>
 #include "../model/model.h"
+#include "../workspace/filter_workspace.h"
 
 namespace filter
 {
@@ -25,7 +27,8 @@ public:
     // get updates for parameter vector and covariance matrix
     virtual void get_update(std::vector<double> &mes, 
                             std::vector<double> &upd_vec, 
-                            std::vector<double> &upd_cov) const = 0;
+                            std::vector<double> &upd_cov,
+                            Filter_Workspace &ws) const = 0;
 
     Probabilistic_Filter(Model &model) 
     : m(model), R(m.forward_size*m.forward_size, 0), S(m.num_pars*m.num_pars, 0) {};
@@ -38,6 +41,9 @@ public:
 
     void set_S(const std::vector<double> &S_new);
     void set_R(const std::vector<double> &R_new);
+
+    // workspace allocator
+    virtual std::unique_ptr<Filter_Workspace> allocate_workspace() const = 0;
 };
 }; // filter
 #endif

@@ -1,20 +1,19 @@
 - write tests
 
-- reformat code 0
---- get away from raw pointers
---- encapsulate basic parameters (like num_pars)
---- add namespaces
---- remove _START_UNDERSCORES
---- make parameters in constructors more interpretable
---- add override
---- methods const correctness
---- pass by reference in setters
+- refactor
++++ get away from mutable members
+--- remove semicolons in the end of namespaces
+--- refactor parameters in equator_c
 
 - reformat code 1
 --- set up autodiff. Either use concepts (preferrable for practise), or use the second solution suggested by gemini
---- think about contex pattern for better function signatures and good performance
+--- think about context pattern for better function signatures and good performance
 
 - set up ci/cd
 
 - process tilted data
 --- write tilted equator
+------ add compile-time dispatch on orientability
+
+- refactor
+--- rewrite fft in C++ style

@@ -7,6 +7,7 @@
 #include "core/filter/kalman_extended/kalman_extended.h"
 #include "core/filter/kalman_unscented/kalman_unscented.h"
 #include "core/updater/decay_updater/decay_updater.h"
+#include "types/workspace/filter_workspace.h"
 
 int main()
 {
@@ -46,12 +47,15 @@ int main()
     filter_ext.set_R(R);
     filter_ext.set_S(S);
 
+    auto extended_ws = filter_ext.allocate_workspace();
+
     // unscented
     filter::Kalman_Unscented filter_uns(model);
 
     filter_uns.set_R(R);
     filter_uns.set_S(S);
 
+    auto unscented_ws = filter_uns.allocate_workspace();
 
     // ------------ UPDATER
 
@@ -94,9 +98,8 @@ int main()
 
     for(iter=0; iter<10; iter++)
     {
-        filter_uns.get_update(measurements, upd_vec, upd_cov);
+        filter_ext.get_update(measurements, upd_vec, upd_cov, *extended_ws);
         factor = updater.update(upd_vec, measurements);
-        //filter_uns.update_covariance(upd_cov, factor);
 
         model.response(response);
         std::cout << "+++++   ";
