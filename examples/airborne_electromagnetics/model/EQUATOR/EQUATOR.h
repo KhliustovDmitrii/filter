@@ -87,6 +87,11 @@ public:
 
         for(i=1;i<2*num_freqs_fulltime;i+=2)
             freqs_fd_fulltime[(i-1)/2] = bfr*i;
+
+        fft.inv_index = nullptr;
+        fft.fn = nullptr;
+        fft.wkn = nullptr;
+        fft.xn = nullptr;
     };
 
 

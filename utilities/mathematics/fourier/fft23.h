@@ -21,6 +21,7 @@ void FFT_free(FFT *);
 void FFT_free_full(FFT *);
 void fft_pro(FFT *,int);
 void init_fft(FFT *fft, int n);
+void fft_set_zero(FFT *);
 
 }; // filter::math
 #endif

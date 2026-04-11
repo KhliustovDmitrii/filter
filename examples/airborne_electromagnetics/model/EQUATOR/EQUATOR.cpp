@@ -48,6 +48,7 @@ void EQUATOR::td_forward(std::vector<double> &dest)
     cube_spline0(&sr   ,xx ,real(y0)   ,y1   ,dy0   ,dy1  );
     cube_spline0(&si   ,xx ,imag(y0)   ,0   ,0   ,0  );
    
+    FFT_free_full(&fft);
     std::memset(&fft,0,sizeof(fft));
     init_fft(&fft, spec_len);
     

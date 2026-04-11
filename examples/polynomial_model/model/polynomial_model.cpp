@@ -16,7 +16,7 @@ void Polynomial_Model::response(std::vector<double> &resp_arr) const
 
         for(j=num_pars-1; j>=0; j--)
         {
-            resp_arr[i] = resp_arr[i] + xn*params_[j];
+            resp_arr[i] = resp_arr[i] + xn*params[j];
             xn = xn * points[i];
         }
     }
@@ -42,11 +42,11 @@ double Polynomial_Model::residual(std::vector<double> &mes, std::vector<double> 
 
 void Polynomial_Model::set_param(int ind, double val)
 {
-    params_[ind] = val;
+    params[ind] = val;
 }
 
 double Polynomial_Model::get_param(int ind) const
 {
-    return params_[ind];
+    return params[ind];
 }
 }; // filter::examples

@@ -6,6 +6,9 @@
 #include "../EQUATOR/EQUATOR.h"
 #include "types/model/model.h"
 
+#include <memory>
+#include <functional>
+
 namespace filter::examples
 {
 class EQUATOR_data_loader;
@@ -19,29 +22,9 @@ public:
     friend class EQUATOR_data_loader;
     friend class EQUATOR_aggregator;
 
-    EQUATOR_C(EQUATOR &EQ,
-              std::vector<int> diff_depth_, std::vector<int> diff_rho_, 
-              std::vector<int> diff_alt_cor_,
-              std::vector<int> diff_cole_rho_, std::vector<int> diff_cole_tau_, 
-              std::vector<int> diff_cole_c_,
-              std::vector<int> scale_depth_, std::vector<int> scale_rho_, 
-              std::vector<int> scale_alt_cor_,
-              std::vector<int> scale_cole_rho_, std::vector<int> scale_cole_tau_, 
-              std::vector<int> scale_cole_c_,
-              std::vector<double> weights_) :
-              Model(
-                diff_depth_.size() + diff_rho_.size() + diff_alt_cor_.size() +
-                diff_cole_rho_.size() + diff_cole_tau_.size() + diff_cole_c_.size(),
-                2 * E.num_freqs + E.num_channels),
-              E(EQ), diff_depth(diff_depth_), diff_rho(diff_rho_), diff_alt_cor(diff_alt_cor_),
-              diff_cole_rho(diff_cole_rho_), diff_cole_tau(diff_cole_tau_), diff_cole_c(diff_cole_c_),
-              scale_depth(scale_depth_), scale_rho(scale_rho_), scale_alt_cor(scale_alt_cor_),
-              scale_cole_rho(scale_cole_rho_), scale_cole_tau(scale_cole_tau_), scale_cole_c(scale_cole_c_),
-              weights(weights_)
-              {
-                // set up params equal to full EQUATOR's
-                full_to_c();
-              };
+    EQUATOR_C(EQUATOR &EQ, std::vector<double> weights_) : 
+    Model(0, 2 * EQ.num_freqs + EQ.num_channels), 
+    E(EQ), weights(weights_) {};
 
     // forward function
     virtual void response(std::vector<double> &resp_arr) const override;
@@ -53,29 +36,54 @@ public:
     virtual void set_param(int ind, double val) override;
     virtual double get_param(int ind) const override;
 
+    // add differentiable param to model
+    template <typename forward_scale, typename backward_scale>
+    void add_param(std::vector<double> &model_part, size_t ind)
+    {
+        params.emplace_back(
+            std::make_unique<scalable_parameter<forward_scale, backward_scale>>(model_part, ind));
+
+        num_pars++;
+    }
+
 private:
 
     EQUATOR &E;
 
-    // differentiability of EQUATOR model parameters
-    std::vector<int> diff_depth, diff_rho;
-    std::vector<int> diff_cole_rho, diff_cole_tau, diff_cole_c;
+    // a class encapsulating model interaction logic
+    class abstract_scalable_parameter
+    {
+    public:
+      virtual double get() = 0;
+      virtual void set(double val) = 0; 
+      virtual ~abstract_scalable_parameter() = default;
+    };
 
-    // ugly, but we use vector here for uniformity
-    // empty corresponds to non-differentiable parameter
-    std::vector<int> diff_alt_cor;
+    // family of concrete implementations
+    template <typename forward_scale, typename backward_scale>
+    class scalable_parameter : public abstract_scalable_parameter
+    {
+    private:
+      forward_scale fs;
+      backward_scale bs;
 
-    // scales; 0 for lin, 1 for log, 2 for log-lin
-    std::vector<int> scale_depth, scale_rho;
-    std::vector<int> scale_cole_rho, scale_cole_tau, scale_cole_c;
-    std::vector<int> scale_alt_cor;
+      std::vector<double>& model_part;
+      size_t model_ind;
+
+    public:
+      virtual double get() { return bs(model_part[model_ind]); }
+      virtual void set(double val) { model_part[model_ind] = fs(val); }
+
+      scalable_parameter(std::vector<double>& model_part_, size_t model_ind_) :
+      abstract_scalable_parameter(), model_part(model_part_), model_ind(model_ind_)
+      {};
+    };
+
+    std::vector<std::unique_ptr<abstract_scalable_parameter>> params;
 
     // weights to compute residual with
     std::vector<double> weights;
 
-    // transforms underlying EQUATOR to _C  and vice versa
-    void c_to_full();
-    void full_to_c();
 };
 }; // filter::examples
 #endif

@@ -17,3 +17,8 @@
 
 - refactor
 --- rewrite fft in C++ style
+--- remove params_ from model (and all other unnecessary things)
+--- residual is more of proximity - incorporate norm concept
+--- put more into workspace - upd_vec, upd_cov etc
+
+- fix td response

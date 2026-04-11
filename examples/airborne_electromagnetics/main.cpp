@@ -52,7 +52,8 @@ int main(int argc, char *argv[])
   std::vector<double> freqs = {77.1, 231.5, 385.8, 540.1, 694.4, 1003.1, 1157.41, 1311.7, 1466, 1620.4, 1774.7,
              1929, 2083.3, 2237.65, 2854.94, 3009.26, 3163.58, 3317.9, 3472.22, 6172.84, 13503.09};
 
-  std::vector<double> chans = {1, 2, 3, 5, 7, 12, 19, 30, 49, 79, 128, 207, 336, 545, 884};
+  //std::vector<double> chans = {1, 2, 3, 5, 7, 12, 19, 30, 49, 79, 128, 207, 336, 545, 884};
+  std::vector<double> chans = {0};
 
   double prim_field = filter::math::primField(32, 25)/10000;
 
@@ -63,24 +64,15 @@ int main(int argc, char *argv[])
   filter::examples::EQUATOR full_model(num_layers, pol_inds, rho_ini, freqs, chans, prim_field, spec);
 
   // reduced
-  filter::examples::EQUATOR reduced_model(1, {}, 100, {77.1, 231.5}, {1}, prim_field, {1});
+  filter::examples::EQUATOR reduced_model(1, {}, 100, {77.1, 231.5}, {0}, prim_field, {1});
 
   // ------------ ADAPTER
 
   // full
-  std::vector<int> dr, dac, sr, sac;
-  std::vector<int> empty = {};
-  for(i=0; i<num_layers; i++)
-  {
-    dr.push_back(i);
-    sr.push_back(2);
-  }
-  dac.push_back(1);
-  sac.push_back(0);
-
   std::vector<double> noise_fd = {0.2, 0.12, 0.09, 0.13, 0.39, 0.5, 0.58, 0.52, 0.36, 0.46, 0.15, 0.31, 1.01, 0.56, 0.63,
              0.76, 0.44, 0.23, 0.44, 0.52, 1.11};
-  std::vector<double> noise_td = {71000, 71000, 70000, 66000, 53000, 33000, 33000, 23000, 19000, 30000, 18000, 16000, 10000, 7000};
+  //std::vector<double> noise_td = {71000, 71000, 70000, 66000, 53000, 33000, 33000, 23000, 19000, 30000, 18000, 16000, 10000, 7000};
+  std::vector<double> noise_td = {};
    
   std::vector<double> weights = {};
 
@@ -88,15 +80,24 @@ int main(int argc, char *argv[])
   for(i=0; i<noise_fd.size(); i++) weights.push_back(noise_fd[i]);
   for(i=0; i<noise_td.size(); i++) weights.push_back(noise_td[i]);
 
-  filter::examples::EQUATOR_C adapter(full_model, empty, dr, dac, empty, empty, empty, empty, sr, sac, empty, empty, empty, weights);
+  filter::examples::EQUATOR_C adapter(full_model, weights);
+
+  for(i=0; i<full_model.num_layers; i++)
+    adapter.add_param<filter::math::ExpLin, filter::math::LogLin>(full_model.rhos, i);
+
+  adapter.add_param<filter::math::Lin, filter::math::Lin>(full_model.altitude_correction, 0);
 
   // reduced
-  filter::examples::EQUATOR_C adapter_red(reduced_model, {}, {0}, {}, {}, {}, {}, {}, {2}, {}, {}, {}, {}, {0.2, 1000, 0.2, 0.2});
+  filter::examples::EQUATOR_C adapter_red(reduced_model, {0.2, 1000, 0.2, 0.2});
+
+
+  for(i=0; i<reduced_model.num_layers; i++)
+    adapter_red.add_param<filter::math::ExpLin, filter::math::LogLin>(reduced_model.rhos, i);
 
   // ------------ READER
   char sep = ' ';
   char dec = '.';
-  int time_size = 15;
+  int time_size = 4;
   std::vector<std::string> drops;
   drops.push_back("/");
   drops.push_back("L");
@@ -109,10 +110,10 @@ int main(int argc, char *argv[])
   // ------------ DATA LOADER
 
   // full
-  filter::examples::EQUATOR_data_loader data_loader(adapter, 0, 1, 2, 3, 24, 45, -1, 1, 1);
+  filter::examples::EQUATOR_data_loader data_loader(adapter, 0, 1, 2, 3, 24, 45, 1, 1, 1);
 
   // reduced
-  filter::examples::EQUATOR_data_loader data_loader_red(adapter_red, 0, 1, 2, 3, 24, 45, -1, 1, 1);
+  filter::examples::EQUATOR_data_loader data_loader_red(adapter_red, 0, 1, 2, 3, 24, 45, 1, 1, 1);
 
   // ------------ FILTER - EXTENDED
 

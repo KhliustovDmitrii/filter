@@ -8,16 +8,10 @@ namespace filter
 // computes response based on params
 class Model
 {
-
-protected:
-
-    // model parameters
-    std::vector<double> params_;
-
 public:
 
     // number of model parameters
-    const int num_pars;
+    int num_pars;
 
     // dimensionality of response
     const int forward_size;
@@ -33,7 +27,7 @@ public:
     virtual double get_param(int ind) const = 0;
 
     Model(int num_params = 0, int response_size = 0) 
-        : num_pars(num_params), forward_size(response_size), params_(num_params, 0.0) {};
+        : num_pars(num_params), forward_size(response_size) {};
 
     virtual ~Model() = default;
 };

@@ -73,10 +73,10 @@ void init_fft(FFT *fft, int n)
    fft->n *= 3;
     }
 
-    fft->inv_index = (int *)realloc(fft->inv_index,2*fft->n*sizeof(int));
-    fft->wkn= (std::complex<double> *)realloc(fft->wkn,fft->n*sizeof(std::complex<double>));
-    fft->xn = (std::complex<double> *)realloc(fft->xn,fft->n*sizeof(std::complex<double>));
-    fft->fn = (std::complex<double> *)realloc(fft->fn,fft->n*sizeof(std::complex<double>));
+    fft->inv_index = (int *)malloc(2*fft->n*sizeof(int));
+    fft->wkn= (std::complex<double> *)malloc(fft->n*sizeof(std::complex<double>));
+    fft->xn = (std::complex<double> *)malloc(fft->n*sizeof(std::complex<double>));
+    fft->fn = (std::complex<double> *)malloc(fft->n*sizeof(std::complex<double>));
     
     memset(fft->inv_index,0,2*fft->n*sizeof(int));
     memset(fft->wkn,0,fft->n*sizeof(std::complex<double>));
@@ -113,10 +113,10 @@ void FFT_free(FFT *f)
 
 void FFT_free_full(FFT *f)
 {
-    free(f->inv_index);
-    free(f->wkn);
-    free(f->xn);
-    free(f->fn);
+    if(f->inv_index) free(f->inv_index);
+    if(f->wkn) free(f->wkn);
+    if(f->xn) free(f->xn);
+    if(f->fn) free(f->fn);
     //free(f);
 }
 
@@ -177,6 +177,22 @@ if(!inv) {
     ;//for(m=0;m<fft->n;m++)
      //   fft->fn[m] /= fft->n;
 }
+
+}
+
+void fft_set_zero(FFT *fft)
+{
+    int i;
+
+    for(i=0; i<2*fft->n; i++) 
+        fft->inv_index[i] = 0;
+
+    for(i=0; i<fft->n; i++) 
+    {
+        fft->fn[i] = 0;
+        fft->wkn[i] = 0;
+        fft->xn[i] = 0;
+    }
 
 }
 

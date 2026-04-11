@@ -19,4 +19,4 @@ define SRCM
 endef
 
 all:
-	$(CC) main.cpp $(CFLAGS) $(INCLUDES) $(SRCM) $(SRCL) $(SRCU) $(SRCI) -o pipeline
+	$(CC) generate_data.cpp $(CFLAGS) $(INCLUDES) $(SRCM) $(SRCL) $(SRCU) $(SRCI) -o generate_data

@@ -15,7 +15,7 @@ public:
     Model(coeff.size(), pts.size()), points(pts), norm_p(norm)
     {
 
-        params_ = coeff;
+        params = coeff;
     };
 
     // forward function
@@ -31,6 +31,8 @@ public:
 private:
     std::vector<double> points; // points in which to compute polynomial
     double norm_p; // p in Lp norm
+
+    std::vector<double> params;
 };
 }; // filter::examples
 #endif
