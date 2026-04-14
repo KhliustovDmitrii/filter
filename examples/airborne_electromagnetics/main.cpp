@@ -1,4 +1,5 @@
 #include "core/filter/kalman_extended/kalman_extended.h"
+#include "core/filter/kalman_unscented/kalman_unscented.h"
 #include "core/input_filter/averaging_filter/averaging_filter.h"
 #include "core/regularizer/boundary_projector/boundary_projector.h"
 #include "core/updater/decay_updater/decay_updater.h"
@@ -18,9 +19,12 @@
 // Example of using the filter library for processing airborne electromagnetics data
 int main(int argc, char *argv[])
 {
+  // ------------ OUTPUT FILE
+  std::ofstream out(argv[2]);
+
   // ------------ WAVEFORM
   std::ifstream wf("waveform.XYZ");
-  std::vector<double> waveform(2592, 0);
+  std::vector<std::complex<double>> waveform;
   int i;
   
 
@@ -31,14 +35,10 @@ int main(int argc, char *argv[])
     waveform.push_back(temp);
   }
 
-  filter::math::FFT imp_fft;
-  memset(&imp_fft, 0, sizeof(imp_fft));
+  filter::math::Fourier wf_fft(2592);
   
-  filter::math::init_fft(&imp_fft,2592);
-  for(i=0;i<2592;i++)
-    imp_fft.xn[i] = waveform[i];
-    
-  filter::math::fft_pro(&imp_fft,0);
+  wf_fft.set_xn(waveform);
+  wf_fft.compute(0);
 
   // ------------ MODEL
 
@@ -57,9 +57,7 @@ int main(int argc, char *argv[])
 
   double prim_field = filter::math::primField(32, 25)/10000;
 
-  std::vector<std::complex<double>> spec;
-  for(i=0;i<2592;i++)
-    spec.push_back(imp_fft.fn[i]);
+  std::vector<std::complex<double>> spec = wf_fft.get_fn();
 
   filter::examples::EQUATOR full_model(num_layers, pol_inds, rho_ini, freqs, chans, prim_field, spec);
 
@@ -97,7 +95,7 @@ int main(int argc, char *argv[])
   // ------------ READER
   char sep = ' ';
   char dec = '.';
-  int time_size = 4;
+  int time_size = 16;
   std::vector<std::string> drops;
   drops.push_back("/");
   drops.push_back("L");
@@ -110,23 +108,26 @@ int main(int argc, char *argv[])
   // ------------ DATA LOADER
 
   // full
-  filter::examples::EQUATOR_data_loader data_loader(adapter, 0, 1, 2, 3, 24, 45, 1, 1, 1);
+  filter::examples::EQUATOR_data_loader data_loader(adapter, 0, 1, 2, 3, 24, 45, -1, 1, 1);
 
   // reduced
-  filter::examples::EQUATOR_data_loader data_loader_red(adapter_red, 0, 1, 2, 3, 24, 45, 1, 1, 1);
+  filter::examples::EQUATOR_data_loader data_loader_red(adapter_red, 0, 1, 2, 3, 24, 45, -1, 1, 1);
 
   // ------------ FILTER - EXTENDED
 
   // full
-  filter::Kalman_Extended filter_ext(adapter);
+  filter::Kalman_Unscented filter_ext(adapter);
   std::vector<double> R = filter_ext.get_R();
   std::vector<double> S = filter_ext.get_S();
 
   double err_ini = 0.3;
   double cor_ini = 0.1;
-  for(i=adapter.num_pars-1;i>=0;i--) 
+  i = adapter.num_pars-1;
+  S[i+adapter.num_pars*i] = 0.3; // altitude correction
+
+  for(i=adapter.num_pars-2;i>=0;i--) 
   {
-    if(i==adapter.num_pars-1)//Bottom layer resisitivity
+    if(i==adapter.num_pars-2)//Bottom layer resisitivity
      S[i+adapter.num_pars*i] = err_ini;
     else //Other resisitivities
     {
@@ -159,7 +160,7 @@ int main(int argc, char *argv[])
   auto extended_ws_full = filter_ext.allocate_workspace();
 
   // reduced
-  filter::Kalman_Extended filter_ext_red(adapter_red);
+  filter::Kalman_Unscented filter_ext_red(adapter_red);
   R = filter_ext_red.get_R();
   S = filter_ext_red.get_S();
 
@@ -192,6 +193,9 @@ int main(int argc, char *argv[])
   std::vector<double> response(adapter.forward_size, 0);
 
   double residual, residual_min;
+
+  std::vector<double> best_params(adapter.num_pars, 0);
+  double best_full_residual = 1000;
   
   while((ret_code = parser.read(read_result, time)) != -1)
   {
@@ -230,6 +234,13 @@ int main(int argc, char *argv[])
     data_loader.load(avg_result);
     data_loader.get_measurements(measurements);
 
+    // weight full and reduced model
+    double weight = std::min(1., 1./best_full_residual);
+    for(i=0; i<full_model.num_layers; i++)
+    {
+      full_model.rhos[i] = weight*full_model.rhos[i] + (1-weight)*reduced_model.rhos[0];
+    }
+
     adapter.response(response);
     residual_min = adapter.residual(measurements, response);
 
@@ -242,10 +253,48 @@ int main(int argc, char *argv[])
       residual = adapter.residual(measurements, response);
       std::cout << "++++++   " << residual << std::endl;
 
+      residual_min = std::min(residual, residual_min);
+
       if(residual < 1 || residual > residual_min) break;
+      else // save parameters
+      {
+        residual_min = residual;
+        for(int par_num = 0; par_num < adapter.num_pars; par_num++)
+        {
+          best_params[i] = adapter.get_param(par_num);
+        }
+      }
     }
 
+    if(residual > residual_min) // restore the best model
+    {
+      for(int par_num = 0; par_num < adapter.num_pars; par_num++)
+      {
+        adapter.set_param(par_num, best_params[i]);
+      }
+    }
+
+    best_full_residual = residual_min;
+
     full_model.print_model();
+
+    out << time << " ";
+    for(int rho_num = 0; rho_num < full_model.num_layers; rho_num++)
+    {
+      out << full_model.rhos[rho_num] << " ";
+    }
+
+    out << full_model.altitude_correction[0] << " ";
+
+    double cum_depth = 0;
+    for(int d_num = 0; d_num < full_model.num_layers-1; d_num++)
+    {
+      out << cum_depth + full_model.depths[d_num]/2 << " ";
+      cum_depth += full_model.depths[d_num];
+    }
+
+    out << cum_depth + full_model.depths[full_model.num_layers - 2] << " ";
+    out << reduced_model.rhos[0] << std::endl;
   }
 
   return 0;

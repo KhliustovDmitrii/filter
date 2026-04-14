@@ -10,7 +10,7 @@
 
 namespace filter::examples
 {
-// implementation of oggregating class for EQUATOR model
+// implementation of aggregating class for EQUATOR model
 class EQUATOR_aggregator : public filter::components::Aggregator
 {
 public:

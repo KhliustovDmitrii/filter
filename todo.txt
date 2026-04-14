@@ -3,7 +3,7 @@
 - refactor
 +++ get away from mutable members
 --- remove semicolons in the end of namespaces
---- refactor parameters in equator_c
++++ refactor parameters in equator_c
 
 - reformat code 1
 --- set up autodiff. Either use concepts (preferrable for practise), or use the second solution suggested by gemini
@@ -16,9 +16,10 @@
 ------ add compile-time dispatch on orientability
 
 - refactor
---- rewrite fft in C++ style
---- remove params_ from model (and all other unnecessary things)
+--- rewrite splines
 --- residual is more of proximity - incorporate norm concept
 --- put more into workspace - upd_vec, upd_cov etc
 
 - fix td response
+
+- implement equator_writer

@@ -1,200 +1,147 @@
-#include <stdio.h>
-#include <math.h>
-#include <complex.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "fft23.h"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Faithful port of the C  inv_ind()  function.
+//
+// Uses a ping-pong double-buffer (inv_index[0..n-1] and inv_index[n..2n-1])
+// to iteratively build the digit-reversed permutation.
+// Radix-3 digits are reversed first, then radix-2 digits — matching the
+// butterfly ordering in compute() (radix-2 stages first, radix-3 stages second).
+// ─────────────────────────────────────────────────────────────────────────────
 
 namespace filter::math
 {
-
-#define SQRT3D2 .8660254037844386
-
-void inv_ind(FFT *fft) 
+void Fourier::calculate_inv_ind()
 {
-    int i,j,k,l,m,num = 1,offs,order = 0;
-    int deo = !(fft->order2);
-    for(i=0;i<fft->n;i++)
-   fft->inv_index[i] = i;
+    const int n = static_cast<int>(spec_len);
+    const int deo = (order2 == 0) ? 1 : 0;
 
-    for(;order<fft->order3-deo;order++) {
-   l = (order&1);
-   k = !l;
-   if(k) k*=fft->n;
-   else  l*=fft->n;
-   m = fft->n/num - 1;
-   for(i=0;i<num;i++) {
-       offs = i*(m+1);
-       for(j=0;j<m;j++) {
-      fft->inv_index[j+offs+k] = fft->inv_index[(j*3)%m+offs+l];
-       }
-       fft->inv_index[m+offs+k] = fft->inv_index[m+offs+l];
-   }
-   num *= 3;
-    }
+    // Identity permutation in the first half
+    for (int i = 0; i < n; ++i)
+        inv_index[i] = i;
 
- 
-    for(;order<fft->order2+fft->order3-1;order++) {
-   l = (order&1);
-   k = !l;
-   if(k) k*=fft->n;
-   else  l*=fft->n;
-   m = fft->n/num - 1;
-   for(i=0;i<num;i++) {
-       offs = i*(m+1);
-       for(j=0;j<m;j++) {
-      fft->inv_index[j+offs+k] = fft->inv_index[(j*2)%m+offs+l];
-       }
-       fft->inv_index[m+offs+k] = fft->inv_index[m+offs+l];
-   }
-   num *= 2;
-    }
-    if(k) 
-   memcpy(fft->inv_index,&fft->inv_index[k],k*sizeof(int));
-}
+    int num   = 1;
+    int order = 0;
+    int k = 0, l = 0;          // will track which half is source / dest
 
-void init_fft(FFT *fft, int n)
-{
-    using namespace std::complex_literals;
-    int nn = n,order = 1;
-    fft->order2 = fft->order3 = 0;
-    fft->n = 1;
-
-    while (nn&&(!(nn&1))) {
-   nn >>= 1;
-   fft->order2++;
-   fft->n <<= 1;
-    }
-
-    while (nn&&(!(nn%3))) {
-   nn/=3;
-   fft->order3++;
-   fft->n *= 3;
-    }
-
-    fft->inv_index = (int *)malloc(2*fft->n*sizeof(int));
-    fft->wkn= (std::complex<double> *)malloc(fft->n*sizeof(std::complex<double>));
-    fft->xn = (std::complex<double> *)malloc(fft->n*sizeof(std::complex<double>));
-    fft->fn = (std::complex<double> *)malloc(fft->n*sizeof(std::complex<double>));
-    
-    memset(fft->inv_index,0,2*fft->n*sizeof(int));
-    memset(fft->wkn,0,fft->n*sizeof(std::complex<double>));
-    memset(fft->xn,0,fft->n*sizeof(std::complex<double>));
-    memset(fft->fn,0,fft->n*sizeof(std::complex<double>));
-
-    int i,j;
-
-    inv_ind(fft);
-
-    for(i=0;i<fft->n;i++) {
-   fft->wkn[i] = std::exp(-2.*i*1i*M_PI/static_cast<double>(fft->n));
-    }
-}
-
-int wkn(int k, int n_c, FFT *fft)
-{
-return (k*(fft->n/n_c));
-}
-
-FFT* FFT_new(int w)
-{
-    FFT *f;
-    f=(FFT*)malloc(sizeof(FFT));
-    memset(f,0,sizeof(FFT));
-    init_fft(f,w);
-    return f;
-}
-
-void FFT_free(FFT *f)
-{
-    free(f);
-}
-
-void FFT_free_full(FFT *f)
-{
-    if(f->inv_index) free(f->inv_index);
-    if(f->wkn) free(f->wkn);
-    if(f->xn) free(f->xn);
-    if(f->fn) free(f->fn);
-    //free(f);
-}
-
-void fft_pro(FFT *fft,int inv)
-{
-    using namespace std::complex_literals;
-    int n, nd2, k, mpnd2, mpnd3, m, order;
-    std::complex<double> temp,temp1,temp2;
-
-for(m=0;m<fft->n;m++)
-   fft->fn[m] = fft->xn[fft->inv_index[m]];
-
-for(n=1,order=0;order<fft->order2;order++) {
-    nd2 = n, n+= n;
-    for(k=0;k<nd2;k++) {
-   int ind = wkn(k,n,fft);
-   for (m=k; m<fft->n; m+=n) {
-       mpnd2 = m + nd2;
-        temp = fft->wkn[ind] * fft->fn[mpnd2];
-        fft->fn[mpnd2] = fft->fn[m] - temp;
-       fft->fn[m]     = fft->fn[m] + temp;
-   }
-    }
-    
-}
-
-for(;order<fft->order2+fft->order3;order++) {
-    nd2 = n, n+= 2*n;
-    for(k=0;k<nd2;k++) {
-   int ind  = wkn(k,n,fft);
-   int ind1 = wkn(2*k,n,fft);
-   for (m=k; m<fft->n; m+=n) {
-       mpnd2 = m + 2*nd2;
-       mpnd3 = m + nd2;
-       temp  = fft->wkn[ind] * fft->fn[mpnd3];
-       temp1 = fft->wkn[ind1]* fft->fn[mpnd2];
-       temp2 = temp + temp1;   // sum
-       temp  = temp - temp1;  
-       temp1 = 1i*(real(temp)*SQRT3D2) -   (imag(temp)*SQRT3D2);  // i*diff*sqrt3/2
-       temp  =   (.5*real(temp2))     + 1i*(.5*imag(temp2))    ;  // half sum
-       fft->fn[mpnd3] = fft->fn[m] - temp - temp1;
-       fft->fn[mpnd2] = fft->fn[m] - temp + temp1;
-       fft->fn[m]     = fft->fn[m] + temp2;
-   }
-    }
-}
-
-if(!inv) {
-    for(m=1;m<fft->n/2;m++)
-        {
-        fft->fn[m] += conj(fft->fn[fft->n - m]);
-        fft->fn[fft->n - m] = 0;
-        fft->fn[m] = conj(fft->fn[m])/static_cast<double>(fft->n);
+    // ---- Radix-3 digit-reversal passes ----
+    for (; order < static_cast<int>(order3) - deo; ++order) {
+        l = (order & 1);
+        k = !l;
+        if (k) k *= n;
+        else   l *= n;
+        int m = n / num - 1;
+        for (int i = 0; i < num; ++i) {
+            int offs = i * (m + 1);
+            for (int j = 0; j < m; ++j) {
+                inv_index[j + offs + k] = inv_index[(j * 3) % m + offs + l];
+            }
+            inv_index[m + offs + k] = inv_index[m + offs + l];
         }
-    fft->fn[0] = 0;
-    fft->fn[fft->n/2] = 0;
-} else {
-    ;//for(m=0;m<fft->n;m++)
-     //   fft->fn[m] /= fft->n;
-}
-
-}
-
-void fft_set_zero(FFT *fft)
-{
-    int i;
-
-    for(i=0; i<2*fft->n; i++) 
-        fft->inv_index[i] = 0;
-
-    for(i=0; i<fft->n; i++) 
-    {
-        fft->fn[i] = 0;
-        fft->wkn[i] = 0;
-        fft->xn[i] = 0;
+        num *= 3;
     }
 
+    // ---- Radix-2 digit-reversal passes ----
+    for (; order < static_cast<int>(order2 + order3) - 1; ++order) {
+        l = (order & 1);
+        k = !l;
+        if (k) k *= n;
+        else   l *= n;
+        int m = n / num - 1;
+        for (int i = 0; i < num; ++i) {
+            int offs = i * (m + 1);
+            for (int j = 0; j < m; ++j) {
+                inv_index[j + offs + k] = inv_index[(j * 2) % m + offs + l];
+            }
+            inv_index[m + offs + k] = inv_index[m + offs + l];
+        }
+        num *= 2;
+    }
+
+    // Copy result to the first half if the final pass left it in the second half
+    if (k) {
+        std::memcpy(inv_index.data(),
+                    inv_index.data() + k,
+                    static_cast<size_t>(k) * sizeof(int));
+    }
 }
 
-}; // filter::math
+// ─────────────────────────────────────────────────────────────────────────────
+// FFT computation — mixed radix-2 / radix-3, faithful port of C  fft_pro().
+// ─────────────────────────────────────────────────────────────────────────────
+void Fourier::compute(bool inv)
+{
+    static const double SQRT3_2 = std::sqrt(3.0) / 2.0;
+    const int N = static_cast<int>(spec_len);
 
+    // Helper: twiddle-factor index
+    auto twiddle = [N](int k, int n_cur) -> int {
+        return k * (N / n_cur);
+    };
+
+    // ---- Reorder input by digit-reversed permutation ----
+    for (int m = 0; m < N; ++m)
+        fn[m] = xn[inv_index[m]];
+
+    // ---- Radix-2 butterfly stages ----
+    int n = 1;
+    for (size_t stage = 0; stage < order2; ++stage) {
+        int nd2 = n;
+        n += n;                         // n *= 2
+        for (int k = 0; k < nd2; ++k) {
+            int ind = twiddle(k, n);
+            for (int m = k; m < N; m += n) {
+                int mpnd2 = m + nd2;
+                std::complex<double> temp = wkn[ind] * fn[mpnd2];
+                fn[mpnd2] = fn[m] - temp;
+                fn[m]     = fn[m] + temp;
+            }
+        }
+    }
+
+    // ---- Radix-3 butterfly stages ----
+    for (size_t stage = 0; stage < order3; ++stage) {
+        int nd2 = n;
+        n += 2 * n;                     // n *= 3
+        for (int k = 0; k < nd2; ++k) {
+            int ind  = twiddle(k, n);
+            int ind1 = twiddle(2 * k, n);
+            for (int m = k; m < N; m += n) {
+                int mpnd2 = m + 2 * nd2;   // third element
+                int mpnd3 = m + nd2;        // second element
+                std::complex<double> temp  = wkn[ind]  * fn[mpnd3];
+                std::complex<double> temp1 = wkn[ind1] * fn[mpnd2];
+                std::complex<double> temp2 = temp + temp1;          // sum
+                temp = temp - temp1;                                // diff
+
+                // i * diff * sqrt(3)/2
+                temp1 = std::complex<double>(
+                    -std::imag(temp) * SQRT3_2,
+                     std::real(temp) * SQRT3_2
+                );
+
+                // half sum
+                temp = std::complex<double>(
+                    0.5 * std::real(temp2),
+                    0.5 * std::imag(temp2)
+                );
+
+                fn[mpnd3] = fn[m] - temp - temp1;
+                fn[mpnd2] = fn[m] - temp + temp1;
+                fn[m]     = fn[m] + temp2;
+            }
+        }
+    }
+
+    // ---- Post-processing (real-spectrum extraction, same as C) ----
+    if (!inv) {
+        for (int m = 1; m < N / 2; ++m) {
+            fn[m] += std::conj(fn[N - m]);
+            fn[N - m] = {0.0, 0.0};
+            fn[m] = std::conj(fn[m]) / static_cast<double>(N);
+        }
+        fn[0]     = {0.0, 0.0};
+        fn[N / 2] = {0.0, 0.0};
+    }
+}
+} // filter::math

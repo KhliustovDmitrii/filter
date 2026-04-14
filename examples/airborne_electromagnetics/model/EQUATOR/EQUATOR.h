@@ -74,7 +74,8 @@ public:
             impulse_spec(spec), 
             rhos_fd(std::vector<std::complex<double>>(nl, 0)),
             resp_fd(std::vector<std::complex<double>>(2*fr.size(), 0)),
-            resp_fd_fulltime(std::vector<std::complex<double>>(2*nff, 0))
+            resp_fd_fulltime(std::vector<std::complex<double>>(2*nff, 0)),
+            fft(sl)
     {
         int i;
         double thick_0 = 4;
@@ -87,11 +88,6 @@ public:
 
         for(i=1;i<2*num_freqs_fulltime;i+=2)
             freqs_fd_fulltime[(i-1)/2] = bfr*i;
-
-        fft.inv_index = nullptr;
-        fft.fn = nullptr;
-        fft.wkn = nullptr;
-        fft.xn = nullptr;
     };
 
 
@@ -113,7 +109,7 @@ private:
     std::vector<std::complex<double>> resp_fd, resp_fd_fulltime;
 
     std::vector<std::complex<double>> impulse_spec;
-    filter::math::FFT fft;
+    filter::math::Fourier fft;
 
     // auxillary functions for computations
     std::complex<double> PartSum(double n0, double hh, double r, std::complex<double> n1, std::complex<double> Imp);

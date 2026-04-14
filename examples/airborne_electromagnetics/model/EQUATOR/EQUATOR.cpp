@@ -47,10 +47,6 @@ void EQUATOR::td_forward(std::vector<double> &dest)
     double xx = log(spec_len-1)-log(num_freqs_fulltime-1);
     cube_spline0(&sr   ,xx ,real(y0)   ,y1   ,dy0   ,dy1  );
     cube_spline0(&si   ,xx ,imag(y0)   ,0   ,0   ,0  );
-   
-    FFT_free_full(&fft);
-    std::memset(&fft,0,sizeof(fft));
-    init_fft(&fft, spec_len);
     
     // store in Fourier
     for(i = 0; i<num_freqs_fulltime; i++)
@@ -63,14 +59,15 @@ void EQUATOR::td_forward(std::vector<double> &dest)
                             1i * (si.a[3]*lj*lj*lj+si.a[2]*lj*lj+si.a[1]*lj+si.a[0]);                     
    }
        
-   fft_pro(&fft,1);
+   fft.compute(true);
    
    // cut into channels
+   auto fulltime_response = fft.get_fn();
    for(i = 0; i < num_channels; i++)
    {
       dest[i] = 0;
       for(j=chans[i]; j < chans[i+1]; j++)
-         dest[i] += real(fft.fn[base_chan + j]);
+         dest[i] += real(fulltime_response[base_chan + j]);
             
       dest[i] = dest[i]/(chans[i+1] - chans[i]);
    }

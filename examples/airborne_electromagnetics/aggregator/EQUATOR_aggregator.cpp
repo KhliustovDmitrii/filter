@@ -36,7 +36,5 @@ void EQUATOR_aggregator::aggregate(std::vector<double> weights)
 
         out_model.E.rhos[lnum] = rho;
     }
-
-    //out_model.full_to_c();
 }
 }; // filter::examples
