@@ -1,20 +1,20 @@
-## Filter - a C++ framework for solving non-linear inverse problems  
+# Filter - a C++ framework for solving non-linear inverse problems  
 
-# Overview  
+## Overview  
 
 This framework is devoted to solution of problems which may be stated as follows.  
 Given a (non-linear) model of the form  
-$$
+```math
 y = F(x, \theta),
-$$
+```
 (noised) measurements  
-$$
+```math
 \hat{y} \approx F(x_0, \theta)
-$$
-and parameters $\theta$ find a good estimate of $x_0$.  
+```
+and parameters ```math \theta ``` find a good estimate of ```math x_0 ```.  
 This formulation is applicable in various domains. Examples folder demonstrates application to estimating parameters of polynomial model (a toy example), and to solving geophysical problem of inverting airborne electromagnetics data. The latter one is detailed in several papers listed below.  
 
-# Structure  
+## Structure  
 TODO  
 
 ## License  
