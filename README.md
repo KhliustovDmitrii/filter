@@ -14,8 +14,10 @@ y = F(x, \theta),
 and parameters 
 ```math 
 \theta
-``` find a good estimate of
-```math x_0.
+```
+find a good estimate of
+```math
+x_0.
 ```
 This formulation is applicable in various domains. Examples folder demonstrates application to estimating parameters of polynomial model (a toy example), and to solving geophysical problem of inverting airborne electromagnetics data. The latter one is detailed in several papers listed below.  
 
