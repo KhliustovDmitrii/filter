@@ -12,7 +12,7 @@ A surprising range of problems in science and engineering reduce to the same for
 
 $$y = F(x, \theta),$$
 
-noisy measurements $\hat{y} \approx F(x_0, \theta)$, and a set of known parameters $\theta$, recover a good estimate of the hidden state $x_0$.
+noisy measurements $$\hat{y} \approx F(x_0, \theta),$$ and a set of known parameters $$\theta,$$ recover a good estimate of the hidden state $$x_0$$.
 
 The same mathematical scaffolding that fits a polynomial to scattered points also inverts airborne electromagnetic (AEM) survey data over hundreds of square kilometres. Re-implementing estimation algorithms for each new problem is wasteful — and, in practice, it's where the numerical pitfalls live. **Filter** factors the problem cleanly into two pieces: a small, stable, well-tested estimation core, and a user-defined forward model that plugs into it through a thin abstract interface.
 
