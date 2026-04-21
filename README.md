@@ -58,8 +58,7 @@ cmake --build build
 Run the examples:
 
 ```bash
-./build/examples/polynomial   # polynomial-fit demonstration
-./build/examples/aem          # AEM inversion demonstration
+./build/bin/polynomial_model   # polynomial-fit demonstration
 ```
 
 No dependencies to install. A standard modern C++ compiler and CMake are all that is required.
