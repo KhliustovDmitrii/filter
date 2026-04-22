@@ -14,7 +14,6 @@ public:
     Polynomial_Model(std::vector<double> pts, std::vector<double> coeff, double norm) : 
     Model(coeff.size(), pts.size()), points(pts), norm_p(norm)
     {
-
         params = coeff;
     };
 

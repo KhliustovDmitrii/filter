@@ -1,13 +1,10 @@
 - write tests
 
 - refactor
-+++ get away from mutable members
 --- remove semicolons in the end of namespaces
-+++ refactor parameters in equator_c
 
 - reformat code 1
 --- set up autodiff. Either use concepts (preferrable for practise), or use the second solution suggested by gemini
---- think about context pattern for better function signatures and good performance
 
 - set up ci/cd
 
@@ -23,3 +20,4 @@
 - fix td response
 
 - implement equator_writer
+- add unscertainty measures

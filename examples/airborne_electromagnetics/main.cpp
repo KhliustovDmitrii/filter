@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
   int num_freqs = 15;
   int num_channels = 14;
   std::vector<int> pol_inds = {};
-  double rho_ini = 100;
+  double rho_ini = 10;
 
   std::vector<double> freqs = {77.1, 231.5, 385.8, 540.1, 694.4, 1003.1, 1157.41, 1311.7, 1466, 1620.4, 1774.7,
              1929, 2083.3, 2237.65, 2854.94, 3009.26, 3163.58, 3317.9, 3472.22, 6172.84, 13503.09};
@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
   filter::examples::EQUATOR full_model(num_layers, pol_inds, rho_ini, freqs, chans, prim_field, spec);
 
   // reduced
-  filter::examples::EQUATOR reduced_model(1, {}, 100, {77.1, 231.5}, {0}, prim_field, {1});
+  filter::examples::EQUATOR reduced_model(1, {}, 10, {77.1, 231.5}, {0}, prim_field, {1});
 
   // ------------ ADAPTER
 
@@ -74,7 +74,13 @@ int main(int argc, char *argv[])
    
   std::vector<double> weights = {};
 
-  for(i=0; i<noise_fd.size(); i++) weights.push_back(noise_fd[i]);
+  // account for transform of real frequencies
+  for(i=0; i<noise_fd.size()-1; i++)
+  {
+    weights.push_back(sqrt(noise_fd[i]*noise_fd[i] + noise_fd[i+1]*noise_fd[i+1]));
+  } 
+  weights.push_back(1000.);
+
   for(i=0; i<noise_fd.size(); i++) weights.push_back(noise_fd[i]);
   for(i=0; i<noise_td.size(); i++) weights.push_back(noise_td[i]);
 
@@ -141,7 +147,7 @@ int main(int argc, char *argv[])
     R[adapter.forward_size*i+i] = sqrt(noise_fd[i]*noise_fd[i] + noise_fd[i+1]*noise_fd[i+1]);
 
   // higher freq excluded
-  R[adapter.forward_size*i + i] = 1000;
+  R[adapter.forward_size*i + i] = 1000.;
   i++;
 
   // imaginary component
@@ -160,7 +166,7 @@ int main(int argc, char *argv[])
   auto extended_ws_full = filter_ext.allocate_workspace();
 
   // reduced
-  filter::Kalman_Unscented filter_ext_red(adapter_red);
+  filter::Kalman_Extended filter_ext_red(adapter_red);
   R = filter_ext_red.get_R();
   S = filter_ext_red.get_S();
 
@@ -196,7 +202,10 @@ int main(int argc, char *argv[])
 
   std::vector<double> best_params(adapter.num_pars, 0);
   double best_full_residual = 1000;
-  
+  int iter;
+
+  S = filter_ext.get_S();
+
   while((ret_code = parser.read(read_result, time)) != -1)
   {
     // skip the line
@@ -214,7 +223,7 @@ int main(int argc, char *argv[])
     adapter_red.response(response);
     residual_min = adapter_red.residual(measurements_red, response);
 
-    for(i=0; i<10; i++)
+    for(iter=0; iter<10; iter++)
     {
       filter_ext_red.get_update(measurements_red, upd_vec, upd_cov, *extended_ws_red);
       updater_red.update(upd_vec, measurements_red);
@@ -244,7 +253,7 @@ int main(int argc, char *argv[])
     adapter.response(response);
     residual_min = adapter.residual(measurements, response);
 
-    for(i=0; i<15; i++)
+    for(iter=0; iter<15; iter++)
     {
       filter_ext.get_update(measurements, upd_vec, upd_cov, *extended_ws_full);
       updater.update(upd_vec, measurements);
@@ -255,22 +264,26 @@ int main(int argc, char *argv[])
 
       residual_min = std::min(residual, residual_min);
 
-      if(residual < 1 || residual > residual_min) break;
+      if(residual < 1 || residual > 1.03*residual_min) break;
       else // save parameters
       {
         residual_min = residual;
         for(int par_num = 0; par_num < adapter.num_pars; par_num++)
         {
-          best_params[i] = adapter.get_param(par_num);
+          best_params[par_num] = adapter.get_param(par_num);
         }
       }
+
+      filter_ext.update_covariance(*extended_ws_full, upd_cov, 1.);
     }
+
+    filter_ext.set_S(S);
 
     if(residual > residual_min) // restore the best model
     {
       for(int par_num = 0; par_num < adapter.num_pars; par_num++)
       {
-        adapter.set_param(par_num, best_params[i]);
+        adapter.set_param(par_num, best_params[par_num]);
       }
     }
 
@@ -279,6 +292,8 @@ int main(int argc, char *argv[])
     full_model.print_model();
 
     out << time << " ";
+    out << residual_min << " ";
+    out << iter << " ";
     for(int rho_num = 0; rho_num < full_model.num_layers; rho_num++)
     {
       out << full_model.rhos[rho_num] << " ";
