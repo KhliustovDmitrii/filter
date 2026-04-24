@@ -1,14 +1,5 @@
 #include "fft23.h"
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Faithful port of the C  inv_ind()  function.
-//
-// Uses a ping-pong double-buffer (inv_index[0..n-1] and inv_index[n..2n-1])
-// to iteratively build the digit-reversed permutation.
-// Radix-3 digits are reversed first, then radix-2 digits — matching the
-// butterfly ordering in compute() (radix-2 stages first, radix-3 stages second).
-// ─────────────────────────────────────────────────────────────────────────────
-
 namespace filter::math
 {
 void Fourier::calculate_inv_ind()
@@ -24,7 +15,7 @@ void Fourier::calculate_inv_ind()
     int order = 0;
     int k = 0, l = 0;          // will track which half is source / dest
 
-    // ---- Radix-3 digit-reversal passes ----
+    // Radix-3 digit-reversal passes
     for (; order < static_cast<int>(order3) - deo; ++order) {
         l = (order & 1);
         k = !l;
@@ -41,7 +32,7 @@ void Fourier::calculate_inv_ind()
         num *= 3;
     }
 
-    // ---- Radix-2 digit-reversal passes ----
+    // Radix-2 digit-reversal passes
     for (; order < static_cast<int>(order2 + order3) - 1; ++order) {
         l = (order & 1);
         k = !l;
@@ -66,9 +57,6 @@ void Fourier::calculate_inv_ind()
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// FFT computation — mixed radix-2 / radix-3, faithful port of C  fft_pro().
-// ─────────────────────────────────────────────────────────────────────────────
 void Fourier::compute(bool inv)
 {
     static const double SQRT3_2 = std::sqrt(3.0) / 2.0;
@@ -79,11 +67,11 @@ void Fourier::compute(bool inv)
         return k * (N / n_cur);
     };
 
-    // ---- Reorder input by digit-reversed permutation ----
+    // Reorder input by digit-reversed permutation
     for (int m = 0; m < N; ++m)
         fn[m] = xn[inv_index[m]];
 
-    // ---- Radix-2 butterfly stages ----
+    // Radix-2 butterfly stages
     int n = 1;
     for (size_t stage = 0; stage < order2; ++stage) {
         int nd2 = n;
@@ -99,7 +87,7 @@ void Fourier::compute(bool inv)
         }
     }
 
-    // ---- Radix-3 butterfly stages ----
+    // Radix-3 butterfly stages
     for (size_t stage = 0; stage < order3; ++stage) {
         int nd2 = n;
         n += 2 * n;                     // n *= 3
@@ -133,7 +121,7 @@ void Fourier::compute(bool inv)
         }
     }
 
-    // ---- Post-processing (real-spectrum extraction, same as C) ----
+    // Post-processing (real-spectrum extraction)
     if (!inv) {
         for (int m = 1; m < N / 2; ++m) {
             fn[m] += std::conj(fn[N - m]);

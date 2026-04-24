@@ -17,7 +17,7 @@ public:
           order2(0),
           order3(0)
     {
-        // ---- Factor out powers of 2, then powers of 3 (same as C) ----
+        // Factor out powers of 2, then powers of 3
         size_t nn = n_request;
         while (nn > 0 && (nn % 2 == 0)) {
             nn /= 2;
@@ -31,16 +31,16 @@ public:
         }
         // spec_len = 2^order2 * 3^order3  (largest factor-of-{2,3} portion of n_request)
 
-        // ---- Allocate (inv_index needs 2*n for the ping-pong buffer) ----
+        // Allocate (inv_index needs 2*n for the ping-pong buffer)
         inv_index.assign(2 * spec_len, 0);
         wkn.assign(spec_len, {0.0, 0.0});
         xn.assign(spec_len, {0.0, 0.0});
         fn.assign(spec_len, {0.0, 0.0});
 
-        // ---- Build digit-reversed permutation (faithful port of C inv_ind) ----
+        // Build digit-reversed permutation
         calculate_inv_ind();
 
-        // ---- Precompute twiddle factors ----
+        // Precompute twiddle factors
         const double angle_step = -2.0 * M_PI / static_cast<double>(spec_len);
         for (size_t i = 0; i < spec_len; ++i) {
             double angle = angle_step * static_cast<double>(i);

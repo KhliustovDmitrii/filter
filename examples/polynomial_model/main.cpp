@@ -1,6 +1,7 @@
 #include <vector>
 #include <random>
 #include <iostream>
+#include <fstream>
 
 #include "model/polynomial_model.h"
 
@@ -15,13 +16,15 @@ int main()
     double residual, residual_min;
     double factor;
 
+    std::ofstream mes("polynomial_measurements.XYZ"); // measurements and model response
+    std::ofstream coef("polynomial_coefs.XYZ"); // coefficients and variances
+
     // ------------ MODEL
 
-    std::vector<double> points{0, 1, 2, 5, 6, 7};
+    std::vector<double> points{0, -5, -10, 5, 10};
 
     // target model
-
-    std::vector<double> coeffs{1, 2, 3};
+    std::vector<double> coeffs{3, 2, 1, 2, 3};
     filter::examples::Polynomial_Model target_model(points, coeffs, 2);
 
     // model to fit
@@ -31,16 +34,16 @@ int main()
     // ------------ FILTER
 
     // extended
-    filter::Kalman_Extended filter_ext(model);
+    filter::Kalman_Unscented filter_ext(model);
 
     auto R = filter_ext.get_R();
     auto S = filter_ext.get_S();
 
-    double err_par = 0.1;
+    double err_par = 0.3;
     for(i=0; i<model.num_pars; i++)
         S[i*model.num_pars + i] = err_par;
 
-    double err_data = 0.1;
+    double err_data = 1.;
     for(i=0; i<model.forward_size; i++)
         R[i*model.forward_size + i] = err_data;
 
@@ -48,14 +51,6 @@ int main()
     filter_ext.set_S(S);
 
     auto extended_ws = filter_ext.allocate_workspace();
-
-    // unscented
-    filter::Kalman_Unscented filter_uns(model);
-
-    filter_uns.set_R(R);
-    filter_uns.set_S(S);
-
-    auto unscented_ws = filter_uns.allocate_workspace();
 
     // ------------ UPDATER
 
@@ -76,30 +71,53 @@ int main()
     for(i=0; i<target_model.forward_size; i++)
         measurements[i] = measurements[i] + distribution(generator);
 
-    
     std::cout << "TARGET MODEL PARAMETERS:" << std::endl;
     for(i=0; i<target_model.num_pars; i++)
         std::cout << target_model.get_param(i) << " ";
     std::cout << std::endl;
+
+    for(i=0; i<target_model.num_pars; i++)
+        coef << target_model.get_param(i) << " ";
+    coef << std::endl;
 
     std::cout << "MEASUREMENTS:" << std::endl;
     for(i=0; i<target_model.forward_size; i++)
         std::cout << measurements[i] << " ";
     std::cout << std::endl;
 
+    for(i=0; i<target_model.forward_size; i++)
+        mes << measurements[i] << " ";
+    mes << 0 << std::endl;
+
     std::cout << "MODEL PARAMETERS:" << std::endl;
     for(i=0; i<model.num_pars; i++)
         std::cout << model.get_param(i) << " ";
     std::cout << std::endl;
 
+    for(i=0; i<model.num_pars; i++)
+        coef << model.get_param(i) << " ";
+
+    for(i=0; i<model.num_pars; i++)
+        coef << S[i*model.num_pars + i] << " ";    
+    coef << std::endl;
+
+    
+
     model.response(response);
     residual_min = model.residual(measurements, response);
     std::cout << "START RESIDUAL:   " << residual_min << std::endl;
 
-    for(iter=0; iter<10; iter++)
+    for(i=0; i<model.forward_size; i++)
+        mes << response[i] << " ";
+    mes << residual_min;
+    mes << std::endl;
+
+    for(iter=0; iter<20; iter++)
     {
         filter_ext.get_update(measurements, upd_vec, upd_cov, *extended_ws);
         factor = updater.update(upd_vec, measurements);
+        filter_ext.update_covariance(*extended_ws, upd_cov, factor);
+
 
         model.response(response);
         std::cout << "+++++   ";
@@ -109,6 +127,22 @@ int main()
 
         residual = model.residual(measurements, response);
         std::cout << "------   " << residual << std::endl;
+
+        auto S_modified = filter_ext.get_S();
+        filter_ext.set_S(S);
+
+        for(i=0; i<model.num_pars; i++)
+            coef << model.get_param(i) << " ";
+
+        for(i=0; i<model.num_pars; i++)
+            coef << S_modified[i*model.num_pars + i] << " ";    
+        coef << std::endl;
+
+        for(i=0; i<model.forward_size; i++)
+            mes << response[i] << " ";
+
+        mes << residual;
+        mes << std::endl;
 
         if(residual > residual_min)
         {
