@@ -10,6 +10,7 @@ std::unique_ptr<Filter_Workspace> Kalman_Extended::allocate_workspace() const
     ws->Jacobian.resize(m.num_pars * m.forward_size, 0.0);
     ws->f.resize(m.num_pars, 0.0);
     ws->e.resize(m.num_pars, 0.0);
+    ws->P.resize(m.num_pars*m.num_pars, 0.0);
     return ws;
 }
 
@@ -100,4 +101,26 @@ void Kalman_Extended::proc(EKF_Workspace &ws, int k,
     dz/=d[0];
     for(i=0; i<m.num_pars; i++) upd_vec[i] += ws.e[i]*dz;
 }
+
+void Kalman_Extended::update_covariance(Filter_Workspace &ws, std::vector<double> &upd_cov, double factor)
+{
+    int i, count, j, k;
+
+    std::copy(upd_cov.begin(), upd_cov.end(), S.begin());
+}
+
+std::vector<double> Kalman_Extended::get_P() const
+{
+    std::vector<double> P(m.num_pars*m.num_pars, 0);
+    size_t i, j, k;
+
+    // compute P = St S
+    for(i=0; i<m.num_pars; i++)
+        for(j=0; j<m.num_pars; j++)
+            for(k=0; k<m.num_pars; k++)
+                P[i*m.num_pars + j] = P[i*m.num_pars + j] + S[k*m.num_pars + i]*S[k*m.num_pars + j];
+
+    return P;
+}
+
 }; // filter

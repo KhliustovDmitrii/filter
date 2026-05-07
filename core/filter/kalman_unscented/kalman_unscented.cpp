@@ -173,4 +173,18 @@ void Kalman_Unscented::update_covariance(Filter_Workspace &ws, std::vector<doubl
    // go back to square root of P = St S
    math::matrix_square_root(S, ukf_ws.P, m.num_pars);
 }
+
+std::vector<double> Kalman_Unscented::get_P() const
+{
+    std::vector<double> P(m.num_pars*m.num_pars, 0);
+    size_t i, j, k;
+
+    // compute P = St S
+    for(i=0; i<m.num_pars; i++)
+        for(j=0; j<m.num_pars; j++)
+            for(k=0; k<m.num_pars; k++)
+                P[i*m.num_pars + j] = P[i*m.num_pars + j] + S[k*m.num_pars + i]*S[k*m.num_pars + j];
+
+    return P;
+}
 }; // filter

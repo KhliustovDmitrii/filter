@@ -101,6 +101,24 @@ The framework is the computational backbone of the author's research in dynamic 
 - **SVD-based data denoising.** A pre-processing stage for noisy field data, improving the robustness of downstream inversion.
 - **Gamma-spectrometry model.** Extending the framework's reach to a second geophysical modality, exercising the abstract model interface on a fundamentally different forward physics.
 
+## Example: Polynomial model
+
+Here the framework is used to define a simple model (polynomial evaluated in several points).
+The following is the plot of noisy measurements of 2d degree polynomial:
+
+![Measurements](images/measurements.svg)
+
+This one shows the residuals of two filters - Extended and Unscented - at each iteration:
+
+![Residuals](images/residuals.svg)
+
+And here are the plots of coefficient estimated, with three-sigma credibility intervals derived from posterior parameter variance:
+
+![Extended filter](images/Extended.svg)
+![Unscented filter](images/Unscented.svg)
+
+We start from trivial model (with all zero coefficients). Note that although the Extended filter minimizes residual as well as Unscented one, it does not correctly identify the parameters. Also, the posterior variance for coefficients determined by Extended filter remains large for all but one coefficient. This shows the benefits of non-local linearization approach of Unscented algorithm as compared to more local one of Extended
+
 ## License
 
 Apache License 2.0 — see [`LICENSE`](LICENSE).

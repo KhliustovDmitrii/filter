@@ -10,6 +10,10 @@
 #include "core/updater/decay_updater/decay_updater.h"
 #include "types/workspace/filter_workspace.h"
 
+std::ostream& print_vector(std::ostream &where, std::vector<double> &what);
+std::ostream& print_matrix_diagonal(std::ostream &where, std::vector<double> &what, size_t msize);
+std::ostream& print_model(std::ostream &where, filter::Model& m);
+
 int main()
 {
     int i, iter;
@@ -21,10 +25,10 @@ int main()
 
     // ------------ MODEL
 
-    std::vector<double> points{0, -5, -10, 5, 10};
+    std::vector<double> points{0, -0.5, 0.7, 1};
 
     // target model
-    std::vector<double> coeffs{3, 2, 1, 2, 3};
+    std::vector<double> coeffs{3, 2, 1};
     filter::examples::Polynomial_Model target_model(points, coeffs, 2);
 
     // model to fit
@@ -33,24 +37,23 @@ int main()
 
     // ------------ FILTER
 
-    // extended
-    filter::Kalman_Unscented filter_ext(model);
+    filter::Kalman_Extended filter(model);
 
-    auto R = filter_ext.get_R();
-    auto S = filter_ext.get_S();
+    auto R = filter.get_R();
+    auto S = filter.get_S();
 
-    double err_par = 0.3;
+    double err_par = 1.;
     for(i=0; i<model.num_pars; i++)
         S[i*model.num_pars + i] = err_par;
 
-    double err_data = 1.;
+    double err_data = 0.5;
     for(i=0; i<model.forward_size; i++)
         R[i*model.forward_size + i] = err_data;
 
-    filter_ext.set_R(R);
-    filter_ext.set_S(S);
+    filter.set_R(R);
+    filter.set_S(S);
 
-    auto extended_ws = filter_ext.allocate_workspace();
+    auto filter_ws = filter.allocate_workspace();
 
     // ------------ UPDATER
 
@@ -72,95 +75,85 @@ int main()
         measurements[i] = measurements[i] + distribution(generator);
 
     std::cout << "TARGET MODEL PARAMETERS:" << std::endl;
-    for(i=0; i<target_model.num_pars; i++)
-        std::cout << target_model.get_param(i) << " ";
-    std::cout << std::endl;
-
-    for(i=0; i<target_model.num_pars; i++)
-        coef << target_model.get_param(i) << " ";
-    coef << std::endl;
+    print_model(std::cout, target_model) << std::endl;
+    // print_model(coef, target_model) << std::endl;
 
     std::cout << "MEASUREMENTS:" << std::endl;
-    for(i=0; i<target_model.forward_size; i++)
-        std::cout << measurements[i] << " ";
-    std::cout << std::endl;
-
-    for(i=0; i<target_model.forward_size; i++)
-        mes << measurements[i] << " ";
-    mes << 0 << std::endl;
+    print_vector(std::cout, measurements) << std::endl;
+    print_vector(mes, measurements) << 0 << std::endl;
 
     std::cout << "MODEL PARAMETERS:" << std::endl;
-    for(i=0; i<model.num_pars; i++)
-        std::cout << model.get_param(i) << " ";
-    std::cout << std::endl;
-
-    for(i=0; i<model.num_pars; i++)
-        coef << model.get_param(i) << " ";
-
-    for(i=0; i<model.num_pars; i++)
-        coef << S[i*model.num_pars + i] << " ";    
-    coef << std::endl;
-
+    print_model(std::cout, model) << std::endl;
     
+    print_model(coef, model);
+    print_matrix_diagonal(coef, S, model.num_pars) << std::endl;
 
     model.response(response);
     residual_min = model.residual(measurements, response);
     std::cout << "START RESIDUAL:   " << residual_min << std::endl;
 
-    for(i=0; i<model.forward_size; i++)
-        mes << response[i] << " ";
-    mes << residual_min;
-    mes << std::endl;
+    print_vector(mes, response) << residual_min << std::endl;
 
-    for(iter=0; iter<20; iter++)
+    for(iter=0; iter<30; iter++)
     {
-        filter_ext.get_update(measurements, upd_vec, upd_cov, *extended_ws);
+        filter.get_update(measurements, upd_vec, upd_cov, *filter_ws);
         factor = updater.update(upd_vec, measurements);
-        filter_ext.update_covariance(*extended_ws, upd_cov, factor);
+        filter.update_covariance(*filter_ws, upd_cov, factor);
 
 
         model.response(response);
-        std::cout << "+++++   ";
-        for(i=0; i<model.forward_size; i++)
-            std::cout << response[i] << " ";
-        std::cout << std::endl;
+        std::cout << "response " << iter << ": ";
+        print_vector(std::cout, response) << std::endl;
 
         residual = model.residual(measurements, response);
-        std::cout << "------   " << residual << std::endl;
+        std::cout << "residual " << iter << ": " << residual << std::endl;
 
-        auto S_modified = filter_ext.get_S();
-        filter_ext.set_S(S);
+        auto P_posterior = filter.get_P();
 
-        for(i=0; i<model.num_pars; i++)
-            coef << model.get_param(i) << " ";
+        print_model(coef, model);
+        print_matrix_diagonal(coef, P_posterior, model.num_pars) << std::endl;
 
-        for(i=0; i<model.num_pars; i++)
-            coef << S_modified[i*model.num_pars + i] << " ";    
-        coef << std::endl;
-
-        for(i=0; i<model.forward_size; i++)
-            mes << response[i] << " ";
-
-        mes << residual;
-        mes << std::endl;
+        print_vector(mes, response) << residual << std::endl;
 
         if(residual > residual_min)
         {
-            std::cout << "RESIDUAL INCREASED!!!" << std::endl;
+            std::cout << "RESIDUAL INCREASED! Terminating..." << std::endl;
             break;
         }
 
         residual_min = residual;
 
-        if(residual < err_data) break;
+        if(residual < err_data*0.05) break;
     }
 
     std::cout << "MODEL PARAMETERS:" << std::endl;
-    for(i=0; i<model.num_pars; i++)
-        std::cout << model.get_param(i) << " ";
-    std::cout << std::endl;
+    print_model(std::cout, model) << std::endl;
 
     std::cout << "RESIDUAL:   " << residual_min << std::endl;
 
     return 0;
+}
+
+std::ostream& print_vector(std::ostream &where, std::vector<double> &what)
+{
+    for(size_t i=0; i<what.size(); i++)
+        where << what[i] << " ";
+
+    return where;
+}
+
+std::ostream& print_matrix_diagonal(std::ostream &where, std::vector<double> &what, size_t msize)
+{
+    for(size_t i=0; i<msize; i++)
+        where << what[i*msize + i] << " ";
+
+    return where;
+}
+
+std::ostream& print_model(std::ostream &where, filter::Model& m)
+{
+    for(size_t i=0; i<m.num_pars; i++)
+        where << m.get_param(i) << " ";
+
+    return where;
 }

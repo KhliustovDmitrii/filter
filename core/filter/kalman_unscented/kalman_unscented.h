@@ -51,6 +51,8 @@ public:
     Kalman_Unscented(Model &model) : Probabilistic_Filter(model) {};
 
     std::unique_ptr<Filter_Workspace> allocate_workspace() const override;
+
+    std::vector<double> get_P() const;
 };
 }; // filter
 #endif

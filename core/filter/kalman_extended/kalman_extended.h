@@ -20,6 +20,7 @@ private:
         std::vector<double> Jacobian;
         std::vector<double> e;
         std::vector<double> f;
+        std::vector<double> P;
     };
 
     // compute jacobian matrix
@@ -40,6 +41,12 @@ public:
                     std::vector<double> &upd_vec, 
                     std::vector<double> &upd_cov,
                     Filter_Workspace &ws) const override;
+
+    void update_covariance(Filter_Workspace &ws, 
+                           std::vector<double> &upd_cov, 
+                           double factor);
+
+    std::vector<double> get_P() const;
 };
 }; // filter
 #endif
