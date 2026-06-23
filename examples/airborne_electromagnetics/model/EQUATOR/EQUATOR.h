@@ -32,7 +32,8 @@ public:
     std::vector<double> altitude_correction;
     
     // fixed
-    std::vector<double> freqs, chans;
+    std::vector<double> freqs;
+    std::vector<size_t> chans;
 
     // response
     std::vector<double> freq_re, freq_im, td_chan;
@@ -53,7 +54,7 @@ public:
     // init the model to most often used form - n layer half space of uniform resistivity
     // with lay_thick[i] = 1.1085 * lay_thick[i-1]
     EQUATOR(int nl, std::vector<int> pi, double rho, 
-            std::vector<double> fr, std::vector<double> ch, double pf,
+            std::vector<double> fr, std::vector<size_t> ch, double pf,
             std::vector<std::complex<double>> spec,
             int nff = 100, int sl = 2592, int bc = 199, double bfr = 77.16) :
             num_layers(nl), num_pol_layers(pi.size()), pol_inds(pi), 

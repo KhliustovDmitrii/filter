@@ -55,6 +55,15 @@ cmake -B build
 cmake --build build
 ```
 
+To build in debug mode:
+
+```bash
+cd filter
+cmake -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build
+```
+
+
 Run the examples:
 
 ```bash

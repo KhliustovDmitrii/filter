@@ -16,6 +16,8 @@
 #include <iostream>
 #include <vector>
 
+std::ostream& print_matrix_diagonal(std::ostream &where, std::vector<double> &what, size_t msize);
+
 // Example of using the filter library for processing airborne electromagnetics data
 int main(int argc, char *argv[])
 {
@@ -44,16 +46,13 @@ int main(int argc, char *argv[])
 
   // full
   int num_layers = 25;
-  int num_freqs = 15;
-  int num_channels = 14;
   std::vector<int> pol_inds = {};
-  double rho_ini = 10;
+  double rho_ini = 100;
 
-  std::vector<double> freqs = {77.1, 231.5, 385.8, 540.1, 694.4, 1003.1, 1157.41, 1311.7, 1466, 1620.4, 1774.7,
-             1929, 2083.3, 2237.65, 2854.94, 3009.26, 3163.58, 3317.9, 3472.22, 6172.84, 13503.09};
+  std::vector<double> freqs = {130, 521, 2083, 8333};
 
   //std::vector<double> chans = {1, 2, 3, 5, 7, 12, 19, 30, 49, 79, 128, 207, 336, 545, 884};
-  std::vector<double> chans = {0};
+  std::vector<size_t> chans = {0};
 
   double prim_field = filter::math::primField(32, 25)/10000;
 
@@ -62,13 +61,12 @@ int main(int argc, char *argv[])
   filter::examples::EQUATOR full_model(num_layers, pol_inds, rho_ini, freqs, chans, prim_field, spec);
 
   // reduced
-  filter::examples::EQUATOR reduced_model(1, {}, 10, {77.1, 231.5}, {0}, prim_field, {1});
+  filter::examples::EQUATOR reduced_model(1, {}, 100, {130, 521}, {0}, prim_field, {1});
 
   // ------------ ADAPTER
 
   // full
-  std::vector<double> noise_fd = {0.2, 0.12, 0.09, 0.13, 0.39, 0.5, 0.58, 0.52, 0.36, 0.46, 0.15, 0.31, 1.01, 0.56, 0.63,
-             0.76, 0.44, 0.23, 0.44, 0.52, 1.11};
+  std::vector<double> noise_fd = {0.5, 0.5, 1.5, 1.5};
   //std::vector<double> noise_td = {71000, 71000, 70000, 66000, 53000, 33000, 33000, 23000, 19000, 30000, 18000, 16000, 10000, 7000};
   std::vector<double> noise_td = {};
    
@@ -92,7 +90,7 @@ int main(int argc, char *argv[])
   adapter.add_param<filter::math::Lin, filter::math::Lin>(full_model.altitude_correction, 0);
 
   // reduced
-  filter::examples::EQUATOR_C adapter_red(reduced_model, {0.2, 1000, 0.2, 0.2});
+  filter::examples::EQUATOR_C adapter_red(reduced_model, {0.5, 1000, 0.5, 0.5});
 
 
   for(i=0; i<reduced_model.num_layers; i++)
@@ -101,7 +99,7 @@ int main(int argc, char *argv[])
   // ------------ READER
   char sep = ' ';
   char dec = '.';
-  int time_size = 16;
+  int time_size = 19;
   std::vector<std::string> drops;
   drops.push_back("/");
   drops.push_back("L");
@@ -114,17 +112,17 @@ int main(int argc, char *argv[])
   // ------------ DATA LOADER
 
   // full
-  filter::examples::EQUATOR_data_loader data_loader(adapter, 0, 1, 2, 3, 24, 45, -1, 1, 1);
+  filter::examples::EQUATOR_data_loader data_loader(adapter, 0, 1, 2, 3, 7, 15, -1, 1, 1);
 
   // reduced
-  filter::examples::EQUATOR_data_loader data_loader_red(adapter_red, 0, 1, 2, 3, 24, 45, -1, 1, 1);
+  filter::examples::EQUATOR_data_loader data_loader_red(adapter_red, 0, 1, 2, 3, 7, 15, -1, 1, 1);
 
-  // ------------ FILTER - EXTENDED
+  // ------------ FILTER
 
   // full
-  filter::Kalman_Unscented filter_ext(adapter);
-  std::vector<double> R = filter_ext.get_R();
-  std::vector<double> S = filter_ext.get_S();
+  filter::Kalman_Extended filter(adapter);
+  std::vector<double> R = filter.get_R();
+  std::vector<double> S = filter.get_S();
 
   double err_ini = 0.3;
   double cor_ini = 0.1;
@@ -160,26 +158,26 @@ int main(int argc, char *argv[])
   for(i=pos; i<pos+full_model.num_channels; i++)
     R[adapter.forward_size*i+i] = noise_td[i-pos];
 
-  filter_ext.set_R(R);
-  filter_ext.set_S(S);
+  filter.set_R(R);
+  filter.set_S(S);
 
-  auto extended_ws_full = filter_ext.allocate_workspace();
+  auto extended_ws_full = filter.allocate_workspace();
 
   // reduced
-  filter::Kalman_Extended filter_ext_red(adapter_red);
-  R = filter_ext_red.get_R();
-  S = filter_ext_red.get_S();
+  filter::Kalman_Extended filter_red(adapter_red);
+  R = filter_red.get_R();
+  S = filter_red.get_S();
 
   S[0] = 0.3;
-  R[0] = 0.2;
+  R[0] = 0.5;
   R[5] = 1000;
-  R[10] = 0.2;
+  R[10] = 0.5;
   R[15] = 1000;
 
-  filter_ext_red.set_R(R);
-  filter_ext_red.set_S(S);
+  filter_red.set_R(R);
+  filter_red.set_S(S);
 
-  auto extended_ws_red = filter_ext_red.allocate_workspace();
+  auto extended_ws_red = filter_red.allocate_workspace();
   // ------------ UPDATER
   filter::Decay_Updater updater(adapter, 3, 0.5);
   filter::Decay_Updater updater_red(adapter_red, 3, 0.5);
@@ -204,7 +202,7 @@ int main(int argc, char *argv[])
   double best_full_residual = 1000;
   int iter;
 
-  S = filter_ext.get_S();
+  S = filter.get_S();
 
   while((ret_code = parser.read(read_result, time)) != -1)
   {
@@ -225,14 +223,14 @@ int main(int argc, char *argv[])
 
     for(iter=0; iter<10; iter++)
     {
-      filter_ext_red.get_update(measurements_red, upd_vec, upd_cov, *extended_ws_red);
+      filter_red.get_update(measurements_red, upd_vec, upd_cov, *extended_ws_red);
       updater_red.update(upd_vec, measurements_red);
 
       adapter_red.response(response);
       residual = adapter_red.residual(measurements_red, response);
       std::cout << "------   " << residual << std::endl;
 
-      if(residual < 1 || residual > residual_min) break;
+      if(residual < 1 || residual > residual_min*1.01) break;
 
       residual_min = residual;
     }
@@ -253,10 +251,10 @@ int main(int argc, char *argv[])
     adapter.response(response);
     residual_min = adapter.residual(measurements, response);
 
-    for(iter=0; iter<15; iter++)
+    for(iter=0; iter<20; iter++)
     {
-      filter_ext.get_update(measurements, upd_vec, upd_cov, *extended_ws_full);
-      updater.update(upd_vec, measurements);
+      filter.get_update(measurements, upd_vec, upd_cov, *extended_ws_full);
+      double factor = updater.update(upd_vec, measurements);
 
       adapter.response(response);
       residual = adapter.residual(measurements, response);
@@ -264,20 +262,27 @@ int main(int argc, char *argv[])
 
       residual_min = std::min(residual, residual_min);
 
-      if(residual < 1 || residual > 1.03*residual_min) break;
+      if(residual < 1 || residual > 1.01*residual_min) break;
       else // save parameters
       {
         residual_min = residual;
-        for(int par_num = 0; par_num < adapter.num_pars; par_num++)
+        for(size_t par_num = 0; par_num < adapter.num_pars; par_num++)
         {
           best_params[par_num] = adapter.get_param(par_num);
         }
       }
 
-      filter_ext.update_covariance(*extended_ws_full, upd_cov, 1.);
+      filter.update_covariance(*extended_ws_full, upd_cov, factor);
     }
 
-    filter_ext.set_S(S);
+    // only update covariance on the last step
+    //filter.update_covariance(*extended_ws_full, upd_cov, 1.);
+
+    // get the posterior covariance
+    auto P_posterior = filter.get_P();
+
+    // restore the original
+    filter.set_S(S);
 
     if(residual > residual_min) // restore the best model
     {
@@ -294,7 +299,7 @@ int main(int argc, char *argv[])
     out << time << " ";
     out << residual_min << " ";
     out << iter << " ";
-    for(int rho_num = 0; rho_num < full_model.num_layers; rho_num++)
+    for(size_t rho_num = 0; rho_num < full_model.num_layers; rho_num++)
     {
       out << full_model.rhos[rho_num] << " ";
     }
@@ -302,15 +307,25 @@ int main(int argc, char *argv[])
     out << full_model.altitude_correction[0] << " ";
 
     double cum_depth = 0;
-    for(int d_num = 0; d_num < full_model.num_layers-1; d_num++)
+    for(size_t d_num = 0; d_num < full_model.num_layers-1; d_num++)
     {
       out << cum_depth + full_model.depths[d_num]/2 << " ";
       cum_depth += full_model.depths[d_num];
     }
 
     out << cum_depth + full_model.depths[full_model.num_layers - 2] << " ";
-    out << reduced_model.rhos[0] << std::endl;
+    out << reduced_model.rhos[0] << " ";
+    print_matrix_diagonal(out, P_posterior, adapter.num_pars);
+    out << std::endl;
   }
 
   return 0;
+}
+
+std::ostream& print_matrix_diagonal(std::ostream &where, std::vector<double> &what, size_t msize)
+{
+    for(size_t i=0; i<msize; i++)
+        where << what[i*msize + i] << " ";
+
+    return where;
 }

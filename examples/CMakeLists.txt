@@ -27,3 +27,15 @@ target_include_directories(polynomial_model PRIVATE
 )
 
 target_link_libraries(polynomial_model PRIVATE core utilities)
+
+# Coil model
+add_executable(coil_model
+    coil_model/main.cpp
+    coil_model/model/coil_model.cpp
+)
+
+target_include_directories(coil_model PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/coil_model
+)
+
+target_link_libraries(coil_model PRIVATE core utilities)
